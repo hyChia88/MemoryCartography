@@ -1,3 +1,4 @@
+// src/components/MemoryInput.jsx
 import React from 'react';
 
 const MemoryInput = ({ value, onChange, onSubmit, isDisabled }) => {

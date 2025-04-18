@@ -1,10 +1,11 @@
+// src/components/MemoryList.jsx
 import React from 'react';
 
 const MemoryList = ({ memories, onMemoryClick }) => {
   if (!memories || memories.length === 0) {
     return (
       <div className="text-sm text-gray-500 italic">
-        No memories found. Try adding some.
+        No memories found. Try searching for a location.
       </div>
     );
   }

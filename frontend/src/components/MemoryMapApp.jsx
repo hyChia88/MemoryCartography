@@ -1,47 +1,47 @@
+// src/components/MemoryMapApp.jsx
 import React, { useState, useEffect } from 'react';
 import { ToggleLeft, ToggleRight } from 'lucide-react';
-import memoryService from '../services/api';
 import MemoryList from './MemoryList';
 import SearchBar from './SearchBar';
 import GeneratedText from './GeneratedText';
+import MemoryVisualizer from './MemoryVisualizer';
 import MemoryInput from './MemoryInput';
+import { fetchMemories, generateNarrative, addMemory as apiAddMemory } from '../services/api';
 
 const MemoryMapApp = () => {
   const [activeDatabase, setActiveDatabase] = useState('user');
   const [searchLocation, setSearchLocation] = useState('');
-  const [generatedText, setGeneratedText] = useState('');
-  const [keywords, setKeywords] = useState([]);
+  const [generatedContent, setGeneratedContent] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [userMemories, setUserMemories] = useState([]);
   const [publicMemories, setPublicMemories] = useState([]);
   const [newMemory, setNewMemory] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch memories on component mount and database switch
+  // Fetch memories when active database changes
   useEffect(() => {
-    fetchMemories();
-  }, [activeDatabase]);
-
-  const fetchMemories = async () => {
-    try {
-      const memories = await memoryService.getMemories(activeDatabase);
-      if (activeDatabase === 'user') {
-        setUserMemories(memories);
-      } else {
-        setPublicMemories(memories);
+    const loadMemories = async () => {
+      try {
+        const memories = await fetchMemories(activeDatabase);
+        if (activeDatabase === 'user') {
+          setUserMemories(memories);
+        } else {
+          setPublicMemories(memories);
+        }
+      } catch (error) {
+        console.error('Failed to load memories:', error);
       }
-    } catch (error) {
-      console.error('Error fetching memories:', error);
-    }
-  };
+    };
+
+    loadMemories();
+  }, [activeDatabase]);
 
   const handleSearch = async () => {
     if (!searchLocation.trim()) return;
     
     setIsLoading(true);
     try {
-      const response = await memoryService.generateNarrative(searchLocation, activeDatabase);
-      setGeneratedText(response.text);
-      setKeywords(response.keywords);
+      const data = await generateNarrative(searchLocation, activeDatabase);
+      setGeneratedContent(data);
     } catch (error) {
       console.error('Error generating narrative:', error);
     } finally {
@@ -51,6 +51,10 @@ const MemoryMapApp = () => {
 
   const toggleDatabase = () => {
     setActiveDatabase(activeDatabase === 'user' ? 'public' : 'user');
+    // If we have a generated content, regenerate for the new database type
+    if (generatedContent && searchLocation) {
+      handleSearch();
+    }
   };
 
   const handleMemoryClick = (location) => {
@@ -58,37 +62,45 @@ const MemoryMapApp = () => {
     handleSearch();
   };
 
-  const addMemory = async () => {
+  const addMemoryEntry = async () => {
     if (!newMemory.trim() || !searchLocation.trim()) return;
     
     try {
       // Extract a title from the memory content
       const title = newMemory.split('\n')[0] || `Memory about ${searchLocation}`;
       
-      await memoryService.addMemory({
+      // Create memory object
+      const memoryData = {
         title: title.length > 50 ? title.substring(0, 47) + '...' : title,
         location: searchLocation,
         date: new Date().toISOString().split('T')[0],
         type: activeDatabase,
-        keywords: keywords
-          .filter(k => k.type === 'primary')
-          .map(k => k.text),
-        content: newMemory
-      });
+        keywords: generatedContent ? 
+          generatedContent.keywords
+            .filter(k => k.type === 'primary')
+            .map(k => k.text) : 
+          [searchLocation],
+        description: newMemory
+      };
       
-      fetchMemories();
+      // Submit to API
+      await apiAddMemory(memoryData);
+      
+      // Refresh memories list
+      const updatedMemories = await fetchMemories(activeDatabase);
+      if (activeDatabase === 'user') {
+        setUserMemories(updatedMemories);
+      } else {
+        setPublicMemories(updatedMemories);
+      }
+      
+      // Clear input
       setNewMemory('');
+      
+      // Re-generate narrative to include new memory
+      handleSearch();
     } catch (error) {
       console.error('Error adding memory:', error);
-    }
-  };
-
-  const seedSampleData = async () => {
-    try {
-      await memoryService.seedData();
-      fetchMemories();
-    } catch (error) {
-      console.error('Error seeding data:', error);
     }
   };
 
@@ -97,13 +109,7 @@ const MemoryMapApp = () => {
       {/* Header */}
       <header className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-light text-gray-800">Memory Cartography</h1>
-        <div className="flex items-center space-x-4">
-          <button 
-            onClick={seedSampleData} 
-            className="text-xs text-gray-500 hover:text-gray-700"
-          >
-            Seed Demo Data
-          </button>
+        <div className="flex items-center space-x-2">
           <button 
             onClick={toggleDatabase} 
             className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
@@ -111,12 +117,12 @@ const MemoryMapApp = () => {
             {activeDatabase === 'user' ? (
               <>
                 <ToggleLeft className="text-blue-500" />
-                <span className="text-sm">User</span>
+                <span className="text-sm">User Memories</span>
               </>
             ) : (
               <>
                 <ToggleRight className="text-green-500" />
-                <span className="text-sm">Public</span>
+                <span className="text-sm">Public Memories</span>
               </>
             )}
           </button>
@@ -128,7 +134,7 @@ const MemoryMapApp = () => {
         {/* Memories List */}
         <div className="w-1/4 bg-gray-50 rounded-lg p-3 overflow-y-auto">
           <h2 className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wider">
-            {activeDatabase === 'user' ? 'User Memories' : 'Public Memories'}
+            {activeDatabase === 'user' ? 'Your Memories' : 'Collective Memories'}
           </h2>
           <MemoryList 
             memories={activeDatabase === 'user' ? userMemories : publicMemories}
@@ -148,15 +154,24 @@ const MemoryMapApp = () => {
 
           {/* Generated Text Area */}
           <GeneratedText 
-            generatedText={generatedText}
-            keywords={keywords}
+            generatedContent={generatedContent}
+            isLoading={isLoading}
           />
+
+          {/* Memory Visualization */}
+          {generatedContent && (
+            <MemoryVisualizer 
+              primaryMemories={generatedContent.primary_memories || []}
+              connectedMemories={generatedContent.connected_memories || []}
+              activeType={activeDatabase}
+            />
+          )}
 
           {/* Input Area */}
           <MemoryInput 
             value={newMemory}
             onChange={setNewMemory}
-            onSubmit={addMemory}
+            onSubmit={addMemoryEntry}
             isDisabled={!newMemory.trim() || !searchLocation.trim()}
           />
         </div>

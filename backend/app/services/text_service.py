@@ -1,5 +1,6 @@
 import random
 from typing import List, Dict, Any
+from .recommendation_service import get_recommendation_service
 
 def generate_narrative(memories: List[Dict[str, Any]], location: str, database_type: str = "user"):
     """Generate a narrative about the location based on available memories."""
@@ -68,7 +69,15 @@ def generate_narrative(memories: List[Dict[str, Any]], location: str, database_t
         {"text": kw, "type": "connected"} for kw in connected_keywords
     ])
     
-    return {
-        "text": narrative,
-        "keywords": formatted_keywords
-    }
+    # Use recommendation service to enhance the narrative
+    recommendation_service = get_recommendation_service()
+    enhanced_narrative = recommendation_service.enhance_narrative(
+        {
+            "location": location,
+            "text": narrative,
+            "keywords": formatted_keywords
+        },
+        database_type
+    )
+    
+    return enhanced_narrative

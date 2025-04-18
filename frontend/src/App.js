@@ -1,3 +1,4 @@
+// src/App.js
 import React from 'react';
 import MemoryMapApp from './components/MemoryMapApp';
 
