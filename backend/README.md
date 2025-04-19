@@ -101,3 +101,47 @@ CREATE TABLE memories (
     keywords TEXT,
     description TEXT
 );
+---
+memories table
+CREATE TABLE IF NOT EXISTS memories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename TEXT NOT NULL,
+    title TEXT NOT NULL,
+    location TEXT NOT NULL,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    keywords TEXT,
+    description TEXT,
+    weight REAL DEFAULT 1.0,
+    embedding TEXT
+)
+
+
+---
+Logic:
+1. Data process:
+- collect public & user image. Create memory-event for each image, "keywords" can use OPEN AI to create
+```
+json{
+  "user_0001.jpg": {
+    "original_path": "data/raw/user_photos/kuala_lumpur_trip_123.jpg",
+    "location": "Kuala Lumpur, Malaysia", # can you make it more detaisl to area?
+    "date": "2023-05-15",
+    "keywords": ["Kuala Lumpur Malaysia (location)", "city", "skyline", "building", "modern", "night", "lights", "architecture", "urban", "tower", "sky", "lovely", "dogs"...], # feature, 具体items，abstcract snesory etc, take code in ref1~4 notebook as reference
+    "weight": 1.0 # 1,0 as highters it should be how important the memory to the user/public
+  },
+  ...
+}
+```
+
+2. Recommendation system:
+- when user search a certain keywords, recommendation sysatm proposed a list of memory-event sort by the matching/related score of the event and the keywords (more and closer the best)
+- present them at the MemoryList
+- user can click the event to make the certain weight of the event higher
+- the keyword in the event's keyword will be hightlight
+
+3. Synthetic memory:
+- according to the weight of the memory event list,
+- synthetic memory engine will take the first x event that sum more that certain number (we can set it 3.0 first), stack it and put into open ai, ask open ai to according the timeline and importancy of the events, mimick human writing diary, write a few sentence to describ it,
+- show the synthetic memory in the generated ouptu text area, bold and red color font for the keywords dirext realted to the original event and black for the orgers
+
