@@ -13,6 +13,8 @@ import base64
 from openai import OpenAI
 from tqdm import tqdm
 from dotenv import load_dotenv
+import torch
+import numpy as np
 
 load_dotenv()
 
@@ -42,6 +44,17 @@ class DataProcessor:
 
         # Initialize geocoder
         self.geolocator = Nominatim(user_agent="memory_cartography_app")
+        
+        # Try to load CLIP model if available (for better embeddings)
+        try:
+            import clip
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.clip_model, self.preprocess = clip.load("ViT-B/32", device=self.device)
+            self.clip_available = True
+            print(f"CLIP model loaded successfully on {self.device}")
+        except:
+            self.clip_available = False
+            print("CLIP model not available. Will use OpenAI embeddings instead.")
 
     def get_exif_data(self, image_path):
         """Extract EXIF data from an image file."""
@@ -87,8 +100,8 @@ class DataProcessor:
             print(f"Error converting GPS data: {e}")
             return None
 
-    def get_location_from_gps(self, gps_coords):
-        """Get location name from GPS coordinates using reverse geocoding."""
+    def get_detailed_location(self, gps_coords):
+        """Get detailed location name from GPS coordinates using reverse geocoding."""
         if not gps_coords:
             return None
 
@@ -98,17 +111,31 @@ class DataProcessor:
             if not location:
                 return None
 
-            # Extract city/town and country
+            # Extract detailed address components
             address = location.raw.get('address', {})
-            city = (address.get('city') or address.get('town') or
-                    address.get('village') or address.get('suburb') or
-                    address.get('county'))
+            
+            # Get specific location elements
+            area = address.get('suburb') or address.get('neighbourhood') or address.get('quarter')
+            city = address.get('city') or address.get('town') or address.get('village')
+            district = address.get('county') or address.get('state_district')
+            state = address.get('state') or address.get('region')
             country = address.get('country')
 
-            if city and country:
-                return f"{city}, {country}"
-            elif city:
-                return city
+            # Build a detailed location string
+            location_parts = []
+            if area:
+                location_parts.append(area)
+            if city:
+                location_parts.append(city)
+            if district and district not in location_parts:
+                location_parts.append(district)
+            if state and state not in location_parts:
+                location_parts.append(state)
+            if country:
+                location_parts.append(country)
+
+            if location_parts:
+                return ", ".join(location_parts)
             else:
                 return location.address.split(',')[0]
         except Exception as e:
@@ -144,40 +171,97 @@ class DataProcessor:
             print(f"Error encoding image {image_path}: {e}")
             return None
 
-    def extract_keywords(self, image_path):
-        """Extract keywords/labels from an image using OpenAI API."""
+    def extract_keywords_and_sensory(self, image_path):
+        """Extract keywords, sensory descriptions, and assign weights using OpenAI API."""
         if not self.client:
-            return []
+            return [], "", 1.0
 
         base64_image = self.encode_image(image_path)
         if not base64_image:
-            return []
+            return [], "", 1.0
 
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {
+                        "role": "system",
+                        "content": "You are an assistant that analyzes images and provides detailed descriptions and keywords. For each image, provide:\n\n1. A list of 8-15 keywords including:\n   - Specific items/objects/people in the image\n   - Abstract concepts represented\n   - Sensory qualities (visual, emotional, etc.)\n   - Location-related terms\n\n2. A short sensory description capturing the mood and feeling of the image.\n\n3. A memory importance score from 0.5 to 1.5, where 1.0 is average, higher means more significant/memorable."
+                    },
+                    {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Identify the key objects, scenes, and characteristics in this image. Provide a list of 5-10 concise keywords or short phrases."},
+                            {"type": "text", "text": "Analyze this image and provide keywords, a sensory description, and a memory importance score. Format your response as JSON with fields 'keywords', 'description', and 'weight'."},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                         ],
                     }
                 ],
-                max_tokens=100,
+                response_format={"type": "json_object"},
+                max_tokens=500,
             )
 
             if response.choices and response.choices[0].message.content:
-                keywords_str = response.choices[0].message.content.strip()
-                keywords = [k.strip() for k in keywords_str.split(',') if k.strip()]
-                return keywords[:10]
+                try:
+                    result = json.loads(response.choices[0].message.content)
+                    keywords = result.get('keywords', [])
+                    description = result.get('description', "")
+                    weight = float(result.get('weight', 1.0))
+                    
+                    # Ensure all are strings and strip any extra whitespace
+                    if isinstance(keywords, str):
+                        keywords = [k.strip() for k in keywords.split(',') if k.strip()]
+                    
+                    return keywords, description, weight
+                except json.JSONDecodeError:
+                    print(f"Error parsing OpenAI response for {image_path}")
+                    return [], "", 1.0
             else:
-                print(f"No keywords received from OpenAI for {image_path}")
-                return []
+                print(f"No content received from OpenAI for {image_path}")
+                return [], "", 1.0
 
         except Exception as e:
             print(f"Error calling OpenAI API for {image_path}: {e}")
+            return [], "", 1.0
+
+    def generate_embeddings(self, image_path, keywords):
+        """Generate embeddings for image and keywords."""
+        if self.clip_available:
+            try:
+                # Generate image embedding using CLIP
+                image = Image.open(image_path).convert('RGB')
+                image_input = self.preprocess(image).unsqueeze(0).to(self.device)
+                
+                with torch.no_grad():
+                    image_features = self.clip_model.encode_image(image_input)
+                    
+                # Generate text embedding for keywords
+                text = ", ".join(keywords)
+                import clip
+                text_tokens = clip.tokenize([text]).to(self.device)
+                
+                with torch.no_grad():
+                    text_features = self.clip_model.encode_text(text_tokens)
+                
+                # Combine image and text features
+                combined_features = (image_features + text_features) / 2
+                
+                return combined_features.cpu().numpy().tolist()[0]
+            except Exception as e:
+                print(f"Error generating CLIP embeddings: {e}")
+                return []
+        elif self.client:
+            try:
+                # Use OpenAI embedding API as fallback
+                text = ", ".join(keywords)
+                response = self.client.embeddings.create(
+                    input=text,
+                    model="text-embedding-ada-002"
+                )
+                return response.data[0].embedding
+            except Exception as e:
+                print(f"Error generating OpenAI embeddings: {e}")
+                return []
+        else:
             return []
 
     def process_images(self, source_dir, output_dir, prefix, start_idx=1):
@@ -208,10 +292,10 @@ class DataProcessor:
                 # Get GPS coordinates
                 gps_coords = self.get_gps_coords(exif_data)
 
-                # Get location
+                # Get detailed location
                 location = None
                 if gps_coords:
-                    location = self.get_location_from_gps(gps_coords)
+                    location = self.get_detailed_location(gps_coords)
 
                 # If no GPS data, try to infer from folder name
                 if not location:
@@ -220,7 +304,7 @@ class DataProcessor:
                         location = parent_folder.replace('_', ' ')
                     else:
                         # Default location based on prefix
-                        location = "Kuala Lumpur" if "KL" in str(img_path) else "Bentong"
+                        location = "Kuala Lumpur, Malaysia" if "KL" in str(img_path) else "Bentong, Malaysia"
 
                 # Get date
                 date = self.get_image_date(exif_data)
@@ -229,11 +313,24 @@ class DataProcessor:
                     mod_time = os.path.getmtime(img_path)
                     date = datetime.fromtimestamp(mod_time).strftime('%Y-%m-%d')
 
-                # Extract keywords/labels using OpenAI API
-                keywords = self.extract_keywords(img_path)
-
-                # Generate description
-                description = f"Image taken at {location}. Features: {', '.join(keywords[:5])}"
+                # Extract keywords, sensory description, and weight
+                keywords, description, weight = self.extract_keywords_and_sensory(img_path)
+                
+                # If location not in keywords, add it
+                location_keywords = [location]
+                if ", " in location:
+                    location_parts = location.split(", ")
+                    for part in location_parts:
+                        if part not in location_keywords:
+                            location_keywords.append(part)
+                
+                # Add location to keywords
+                for loc in location_keywords:
+                    if loc not in keywords:
+                        keywords.append(f"{loc} (location)")
+                
+                # Generate embeddings for similarity search
+                embeddings = self.generate_embeddings(img_path, keywords)
 
                 # Copy image to output directory
                 shutil.copy2(img_path, new_path)
@@ -244,7 +341,9 @@ class DataProcessor:
                     'location': location,
                     'date': date,
                     'keywords': keywords,
-                    'description': description
+                    'description': description,
+                    'weight': weight,
+                    'embedding': embeddings
                 }
 
                 # Increment index
@@ -270,7 +369,9 @@ class DataProcessor:
             date TEXT NOT NULL,
             type TEXT NOT NULL,
             keywords TEXT,
-            description TEXT
+            description TEXT,
+            weight REAL DEFAULT 1.0,
+            embedding TEXT
         )
         ''')
 
@@ -279,8 +380,8 @@ class DataProcessor:
             cursor.execute(
                 '''
                 INSERT INTO memories
-                (filename, title, location, date, type, keywords, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (filename, title, location, date, type, keywords, description, weight, embedding)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     filename,
@@ -289,7 +390,9 @@ class DataProcessor:
                     data['date'],
                     'user',
                     json.dumps(data['keywords']),
-                    data['description']
+                    data['description'],
+                    data['weight'],
+                    json.dumps(data['embedding']) if data['embedding'] else None
                 )
             )
 
@@ -298,8 +401,8 @@ class DataProcessor:
             cursor.execute(
                 '''
                 INSERT INTO memories
-                (filename, title, location, date, type, keywords, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (filename, title, location, date, type, keywords, description, weight, embedding)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     filename,
@@ -308,7 +411,9 @@ class DataProcessor:
                     data['date'],
                     'public',
                     json.dumps(data['keywords']),
-                    data['description']
+                    data['description'],
+                    data['weight'],
+                    json.dumps(data['embedding']) if data['embedding'] else None
                 )
             )
 
@@ -348,7 +453,6 @@ class DataProcessor:
         # Create SQLite database
         print("Creating SQLite database...")
         db_path = self.metadata_dir / "memories.db"
-        print(db_path)
         self.create_sqlite_database(db_path, user_metadata, public_metadata)
 
         print("Data processing complete!")
@@ -357,6 +461,7 @@ class DataProcessor:
         print(f"Database created at: {db_path}")
         print(f"User metadata saved to: {user_metadata_path}")
         print(f"Public metadata saved to: {public_metadata_path}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process images for Memory Cartography")
@@ -377,4 +482,3 @@ if __name__ == "__main__":
     )
 
     processor.run()
-    print("done")

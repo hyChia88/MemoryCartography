@@ -1,12 +1,12 @@
 import React from 'react';
-import { MemoryProvider } from '../context/MemoryContext';
-import Header from '../components/Header';
-import MemoryList from '../components/MemoryList';
-import SearchBar from '../components/SearchBar';
-import NarrativeDisplay from '../components/NarrativeDisplay';
-import MemoryForm from '../components/MemoryForm';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { useMemory } from '../context/MemoryContext';
+import { MemoryProvider } from './context/MemoryContext';
+import Header from './components/Header';
+import MemoryList from './components/MemoryList';
+import SearchBar from './components/SearchBar';
+import NarrativeDisplay from './components/NarrativeDisplay';
+import MemoryForm from './components/MemoryForm';
+import LoadingSpinner from './components/LoadingSpinner';
+import { useMemory } from './context/MemoryContext';
 
 // App content component that uses context
 const AppContent = () => {

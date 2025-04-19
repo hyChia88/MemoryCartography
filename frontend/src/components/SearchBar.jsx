@@ -1,36 +1,34 @@
-// src/components/SearchBar.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Search } from 'lucide-react';
+import { useMemory } from '../context/MemoryContext';
 
-const SearchBar = ({ value, onChange, onSearch, isLoading }) => {
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      onSearch();
-    }
+const SearchBar = () => {
+  const { searchQuery, handleSearch, isLoading } = useMemory();
+  const [inputValue, setInputValue] = useState(searchQuery);
+  
+  const onSubmit = (e) => {
+    e.preventDefault();
+    handleSearch(inputValue);
   };
-
+  
   return (
-    <div className="relative">
+    <form onSubmit={onSubmit} className="relative">
       <input 
         type="text" 
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyPress={handleKeyPress}
-        placeholder="Enter a location to explore memories..."
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        placeholder="Enter a location or keyword to explore memories..."
         className="w-full px-3 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 text-lg"
+        disabled={isLoading}
       />
       <button 
-        onClick={onSearch}
-        className="absolute right-0 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-        disabled={isLoading}
+        type="submit"
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+        disabled={!inputValue.trim() || isLoading}
       >
-        {isLoading ? (
-          <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
-        ) : (
-          <Search size={20} />
-        )}
+        <Search className={isLoading ? "animate-pulse" : ""} />
       </button>
-    </div>
+    </form>
   );
 };
 
