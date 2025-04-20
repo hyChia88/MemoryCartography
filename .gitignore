@@ -4,3 +4,4 @@ data
 Archive
 backend\data\metadata
 backend\app\memories.db
+backend\memories.db

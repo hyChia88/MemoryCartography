@@ -73,6 +73,66 @@ async def get_database_info():
     """Get information about the database."""
     return get_db_info()
 
+# Additional routes in memories.py
+
+@router.get("/recommendations", response_model=List[Memory])
+async def get_smart_recommendations(
+    query: str = Query(None, description="Search query"),
+    memory_type: str = Query("user", description="Memory type"),
+    max_memories: int = Query(10, description="Maximum memories to return"),
+    min_relevance_score: float = Query(0.5, description="Minimum relevance score")
+):
+    """
+    Get smart recommendations based on a query with advanced filtering.
+    
+    This endpoint provides more intelligent memory recommendations by:
+    - Supporting partial queries
+    - Filtering by minimum relevance
+    - Supporting multiple memory types
+    """
+    try:
+        # Use recommendation engine with advanced filtering
+        recommendations = recommendation_engine.search_memories(
+            query, 
+            memory_type=memory_type, 
+            limit=max_memories
+        )
+        
+        # Additional post-processing
+        filtered_recommendations = [
+            memory for memory in recommendations 
+            if memory.get('relevance_score', 0) >= min_relevance_score
+        ]
+        
+        return filtered_recommendations
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Recommendation error: {e}")
+
+@router.get("/memory/insights/{memory_id}", response_model=Dict[str, Any])
+async def get_memory_insights(memory_id: int):
+    """
+    Get comprehensive insights about a specific memory.
+    
+    Provides:
+    - Detailed memory information
+    - Similar memories
+    - Related keywords
+    - Interaction history
+    """
+    memory = get_memory_by_id(memory_id)
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    
+    similar_memories = recommendation_engine.find_similar_memories(memory_id)
+    
+    return {
+        "memory": memory,
+        "similar_memories": similar_memories,
+        "related_keywords": memory.get('keywords', []),
+        "interaction_count": 0  # TODO: Implement interaction tracking
+    }
+    
 @router.get("/", response_model=List[Memory])
 async def read_memories(type: str = "user"):
     """Get all memories of a specific type (user or public)."""
