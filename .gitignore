@@ -2,3 +2,5 @@ venv
 backend\.env
 data
 Archive
+backend\data\metadata
+backend\app\memories.db

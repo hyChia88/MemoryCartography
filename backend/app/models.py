@@ -8,6 +8,10 @@ class MemoryBase(BaseModel):
     date: str
     keywords: Optional[List[str]] = None
     content: Optional[str] = None
+    filename: Optional[str] = None
+    description: Optional[str] = None
+    weight: Optional[float] = 1.0
+    image_path: Optional[str] = None
 
 class MemoryCreate(MemoryBase):
     type: str = "user"  # 'user' or 'public'
@@ -15,6 +19,10 @@ class MemoryCreate(MemoryBase):
 class Memory(MemoryBase):
     id: int
     type: str
+    description: Optional[str] = None
+    filename: Optional[str] = None
+    weight: Optional[float] = 1.0
+    image_path: Optional[str] = None
 
 # Request models
 class GenerateRequest(BaseModel):

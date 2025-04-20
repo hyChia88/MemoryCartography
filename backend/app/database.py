@@ -6,38 +6,25 @@ import os
 from pathlib import Path
 
 # Database initialization function
-def init_db(db_path='data/metadata/memories.db'):
-    """Initialize the database with necessary tables."""
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    
-    conn = sqlite3.connect(db_path)
+def init_db():
+    conn = sqlite3.connect('memories.db')
     cursor = conn.cursor()
     
     # Create memories table if it doesn't exist
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS memories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        filename TEXT NOT NULL,
         title TEXT NOT NULL,
         location TEXT NOT NULL,
         date TEXT NOT NULL,
         type TEXT NOT NULL,
         keywords TEXT,
+        content TEXT,
         description TEXT,
+        filename TEXT,
         weight REAL DEFAULT 1.0,
-        embedding TEXT
-    )
-    ''')
-    
-    # Create user_interactions table to track user clicks and interactions
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS user_interactions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        memory_id INTEGER NOT NULL,
-        interaction_type TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        FOREIGN KEY (memory_id) REFERENCES memories (id)
+        image_path TEXT,
+        embedding BLOB
     )
     ''')
     
@@ -45,35 +32,106 @@ def init_db(db_path='data/metadata/memories.db'):
     conn.close()
 
 # Get all memories of a specific type
-def get_memories(memory_type="user", db_path='data/metadata/memories.db'):
-    """Get all memories of a specific type."""
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row  # This enables column access by name
+def get_memories(memory_type="user"):
+    """Get all memories of a specific type (user or public)."""
+    # Print debug information
+    print(f"Getting memories for type: {memory_type}")
+    
+    conn = sqlite3.connect('memories.db')
+    print("yes")
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    cursor.execute(
-        "SELECT id, filename, title, location, date, keywords, description, weight FROM memories WHERE type = ?", 
-        (memory_type,)
-    )
-    results = cursor.fetchall()
-    conn.close()
+    # Count total records in the table
+    cursor.execute("SELECT COUNT(*) FROM memories")
+    total_count = cursor.fetchone()[0]
+    print(f"Total records in database: {total_count}")
     
-    memories = []
-    for row in results:
-        keywords = json.loads(row['keywords']) if row['keywords'] else []
-        memories.append({
-            "id": row['id'],
-            "filename": row['filename'],
-            "title": row['title'],
-            "location": row['location'],
-            "date": row['date'],
-            "keywords": keywords,
-            "description": row['description'],
-            "weight": float(row['weight'] or 1.0)
-        })
+    # Count records of the requested type
+    cursor.execute("SELECT COUNT(*) FROM memories WHERE type = ?", (memory_type,))
+    type_count = cursor.fetchone()[0]
+    print(f"Records of type '{memory_type}': {type_count}")
     
-    return memories
+    # Get column names for debugging
+    cursor.execute("PRAGMA table_info(memories)")
+    column_info = cursor.fetchall()
+    column_names = [col[1] for col in column_info]
+    print(f"Table columns: {column_names}")
+    
+    # Execute the query
+    try:
+        cursor.execute(
+            """
+            SELECT id, title, location, date, type, keywords, 
+                   description, filename, weight, image_path
+            FROM memories WHERE type = ?
+            LIMIT 5
+            """, 
+            (memory_type,)
+        )
+        results = cursor.fetchall()
+        print(f"Query returned {len(results)} results")
+        
+        # Debug: Print the first result if available
+        if results:
+            first_row = dict(results[0])
+            print(f"First row: {first_row}")
+        
+        memories = []
+        for row in results:
+            memory = {
+                "id": row['id'],
+                "title": row['title'],
+                "location": row['location'],
+                "date": row['date'],
+                "type": row['type'],
+                "keywords": json.loads(row['keywords']) if row['keywords'] else [],
+                "description": row['description'],
+                "filename": row['filename'],
+                "weight": row['weight'],
+                "image_path": row['image_path']
+            }
+            memories.append(memory)
+        
+        conn.close()
+        return memories
+        
+    except Exception as e:
+        print(f"Error in get_memories: {e}")
+        conn.close()
+        return []
 
+def get_db_info():
+    """Get information about the database."""
+    try:
+        db_path = os.path.abspath('memories.db')
+        exists = os.path.exists(db_path)
+        
+        info = {
+            "path": db_path,
+            "exists": exists,
+            "size": os.path.getsize(db_path) if exists else 0
+        }
+        
+        if exists:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM memories")
+            info["total_records"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM memories WHERE type = 'user'")
+            info["user_records"] = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM memories WHERE type = 'public'")
+            info["public_records"] = cursor.fetchone()[0]
+            
+            conn.close()
+        
+        return info
+    except Exception as e:
+        return {"error": str(e)}
+    
+    
 # Add a new memory
 def add_memory(filename, title, location, date, memory_type, 
                keywords=None, description=None, weight=1.0, embedding=None, 
@@ -267,11 +325,32 @@ def find_memories_by_location(location, memory_type="user", limit=10, db_path='d
     return memories
 
 # Seed the database with sample data (for testing)
-def seed_data(db_path='data/metadata/memories.db'):
-    """Seed the database with sample data."""
-    # Initialize the database
-    init_db(db_path)
+import json
+import os
+import sqlite3
+from pathlib import Path
+def seed_data(data_dir="D:/ahYen Workspace/ahYen Work/CMU_academic/MSCD_Y1_2425/48632-Taxonavigating the Digital Space/memory-map/data"):
+    """Seed the database with data from metadata files."""
+    # Create base data directory path
+    data_path = Path(data_dir)
     
+    # Define paths to metadata files
+    metadata_dir = data_path / "metadata"
+    public_metadata_file = metadata_dir / "public_metadata.json"
+    user_metadata_file = metadata_dir / "user_metadata.json"
+    
+    # Check if metadata files exist
+    if not public_metadata_file.exists():
+        print(f"Error: Public metadata file not found at {public_metadata_file}")
+        return False
+    if not user_metadata_file.exists():
+        print(f"Error: User metadata file not found at {user_metadata_file}")
+        return False
+        
+    print(f"Found metadata files at {metadata_dir}")
+    
+    # Connect to database
+    db_path = 'memories.db'  # You might need to adjust this path
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
@@ -281,156 +360,168 @@ def seed_data(db_path='data/metadata/memories.db'):
     
     if count > 0:
         conn.close()
+        print(f"Database at {db_path} already contains {count} records. Skipping seed operation.")
         return False  # Data already exists
     
-    # Sample user memories
-    user_memories = [
-        {
-            "filename": "user_0001.jpg",
-            "title": "Summer in New York",
-            "location": "New York City, USA",
-            "date": "2022-07-15",
-            "type": "user",
-            "keywords": ["skyline", "central park", "hot dog", "taxi", "sunset", "urban", "skyscraper", "busy", "exciting"],
-            "description": "I remember walking through Central Park on a hot summer day. The skyline was beautiful against the setting sun.",
-            "weight": 1.2
-        },
-        {
-            "filename": "user_0002.jpg",
-            "title": "Sunset at Golden Gate",
-            "location": "San Francisco, USA",
-            "date": "2021-09-22",
-            "type": "user",
-            "keywords": ["bridge", "foggy", "ocean", "sunset", "cold", "windy", "orange", "engineering", "iconic"],
-            "description": "The Golden Gate Bridge looked stunning with the fog rolling in. The ocean breeze was cold but refreshing.",
-            "weight": 1.0
-        },
-        {
-            "filename": "user_0003.jpg",
-            "title": "Winter Walk",
-            "location": "Chicago, USA",
-            "date": "2023-01-10",
-            "type": "user",
-            "keywords": ["snow", "wind", "lake", "cold", "architecture", "frozen", "white", "peaceful", "crisp"],
-            "description": "The wind coming off Lake Michigan was freezing, but the snow-covered architecture was worth it.",
-            "weight": 0.8
-        },
-        {
-            "filename": "user_0004.jpg",
-            "title": "Breakfast in Bentong",
-            "location": "Bentong, Malaysia",
-            "date": "2023-05-10",
-            "type": "user",
-            "keywords": ["food", "morning", "noodles", "coffee", "traditional", "local", "delicious", "steamy", "aromatic"],
-            "description": "Started the day with a delicious local breakfast. The noodles were perfectly cooked and the coffee was strong.",
-            "weight": 1.1
-        },
-        {
-            "filename": "user_0005.jpg",
-            "title": "Night Market Adventure",
-            "location": "Kuala Lumpur, Malaysia",
-            "date": "2023-05-12",
-            "type": "user",
-            "keywords": ["market", "night", "food", "shopping", "colorful", "busy", "vibrant", "street food", "lively"],
-            "description": "The night market was bustling with activity. So many different foods to try and items to see.",
-            "weight": 1.3
-        }
-    ]
+    # Check table structure
+    cursor.execute("PRAGMA table_info(memories)")
+    columns = [column[1] for column in cursor.fetchall()]
+    print(f"Database columns: {columns}")
     
-    # Sample public memories
-    public_memories = [
-        {
-            "filename": "public_0001.jpg",
-            "title": "City Lights",
-            "location": "Tokyo, Japan",
-            "date": "2022-11-05",
-            "type": "public",
-            "keywords": ["neon", "crowds", "ramen", "skyscraper", "train", "busy", "nightlife", "technology", "vibrant"],
-            "description": "The neon lights of Tokyo create a mesmerizing landscape at night. The city never seems to sleep.",
-            "weight": 1.0
-        },
-        {
-            "filename": "public_0002.jpg",
-            "title": "Beach Memories",
-            "location": "Bali, Indonesia",
-            "date": "2022-05-18",
-            "type": "public",
-            "keywords": ["waves", "sand", "palm trees", "sunset", "warm", "tropical", "relaxing", "ocean", "paradise"],
-            "description": "The beaches in Bali offer the perfect combination of warm sun, gentle waves, and swaying palm trees.",
-            "weight": 1.1
-        },
-        {
-            "filename": "public_0003.jpg",
-            "title": "Mountain View",
-            "location": "Swiss Alps, Switzerland",
-            "date": "2023-02-03",
-            "type": "public",
-            "keywords": ["snow", "peaks", "hiking", "fresh air", "view", "majestic", "panoramic", "pristine", "nature"],
-            "description": "The breathtaking view of snow-capped peaks in the Swiss Alps makes you feel small yet connected to something greater.",
-            "weight": 0.9
-        },
-        {
-            "filename": "public_0004.jpg",
-            "title": "Petronas Towers",
-            "location": "Kuala Lumpur, Malaysia",
-            "date": "2023-04-15",
-            "type": "public",
-            "keywords": ["towers", "architecture", "modern", "city", "skyscraper", "landmark", "night", "lights", "reflection"],
-            "description": "The iconic Petronas Towers dominate the Kuala Lumpur skyline, especially beautiful when lit up at night.",
-            "weight": 1.2
-        },
-        {
-            "filename": "public_0005.jpg",
-            "title": "Bentong Waterfall",
-            "location": "Bentong, Malaysia",
-            "date": "2023-03-10",
-            "type": "public",
-            "keywords": ["waterfall", "nature", "forest", "refreshing", "green", "serene", "peaceful", "water", "outdoor"],
-            "description": "The hidden waterfall near Bentong offers a peaceful retreat from the bustling city. The water is crystal clear and refreshing.",
-            "weight": 1.0
-        }
-    ]
+    # Load metadata from files
+    try:
+        with open(public_metadata_file, 'r', encoding='utf-8') as f:
+            public_metadata = json.load(f)
+        
+        with open(user_metadata_file, 'r', encoding='utf-8') as f:
+            user_metadata = json.load(f)
+        
+        public_count = len(public_metadata)
+        user_count = len(user_metadata)
+        total_count = public_count + user_count
+        
+        print(f"Found {public_count} public memories and {user_count} user memories.")
+        print(f"Total: {total_count} memories to import.")
+        
+    except Exception as e:
+        print(f"Error loading metadata files: {e}")
+        conn.close()
+        return False
     
-    # Insert user memories
-    for memory in user_memories:
-        cursor.execute(
-            '''
-            INSERT INTO memories 
-            (filename, title, location, date, type, keywords, description, weight) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-            (
-                memory["filename"], 
-                memory["title"], 
-                memory["location"], 
-                memory["date"], 
-                memory["type"], 
-                json.dumps(memory["keywords"]),
-                memory["description"],
-                memory["weight"]
-            )
-        )
+    # Process public memories
+    public_inserted = 0
+    for filename, metadata in public_metadata.items():
+        try:
+            # Extract data from metadata
+            location = metadata.get('location', '')
+            date = metadata.get('date', '')
+            keywords = metadata.get('keywords', [])
+            weight = metadata.get('weight', 1.0)
+            description = metadata.get('description', '')
+            
+            # Generate a title from the filename
+            title = filename.replace('.jpg', '').replace('_', ' ').title()
+            
+            # Construct image path
+            image_path = f"/images/public/{filename}"
+            
+            # Adjust column names based on what exists in the database
+            column_names = []
+            values = []
+            
+            # Always include these required columns
+            column_names.extend(['title', 'location', 'date', 'type'])
+            values.extend([title, location, date, 'public'])
+            
+            # Add optional columns if they exist in the database
+            if 'keywords' in columns:
+                column_names.append('keywords')
+                values.append(json.dumps(keywords))
+                
+            if 'description' in columns:
+                column_names.append('description')
+                values.append(description)
+                
+            if 'filename' in columns:
+                column_names.append('filename')
+                values.append(filename)
+                
+            if 'weight' in columns:
+                column_names.append('weight')
+                values.append(weight)
+                
+            if 'image_path' in columns:
+                column_names.append('image_path')
+                values.append(image_path)
+                
+            if 'embedding' in columns and 'embedding' in metadata:
+                column_names.append('embedding')
+                values.append(json.dumps(metadata['embedding']))
+            
+            # Build the SQL insert statement dynamically
+            placeholders = ','.join(['?'] * len(column_names))
+            sql = f"INSERT INTO memories ({','.join(column_names)}) VALUES ({placeholders})"
+            
+            # Execute the insert
+            cursor.execute(sql, values)
+            public_inserted += 1
+            
+            if public_inserted <= 3 or public_inserted % 20 == 0:
+                print(f"Inserted public memory {public_inserted}/{public_count}: {filename}")
+                
+        except Exception as e:
+            print(f"Error inserting public memory {filename}: {e}")
     
-    # Insert public memories
-    for memory in public_memories:
-        cursor.execute(
-            '''
-            INSERT INTO memories 
-            (filename, title, location, date, type, keywords, description, weight) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-            (
-                memory["filename"], 
-                memory["title"], 
-                memory["location"], 
-                memory["date"], 
-                memory["type"], 
-                json.dumps(memory["keywords"]),
-                memory["description"],
-                memory["weight"]
-            )
-        )
+    # Process user memories (similar code as above)
+    user_inserted = 0
+    for filename, metadata in user_metadata.items():
+        try:
+            # Extract data from metadata
+            location = metadata.get('location', '')
+            date = metadata.get('date', '')
+            keywords = metadata.get('keywords', [])
+            weight = metadata.get('weight', 1.0)
+            description = metadata.get('description', '')
+            
+            # Generate a title from the filename
+            title = filename.replace('.jpg', '').replace('_', ' ').title()
+            
+            # Construct image path
+            image_path = f"/images/user/{filename}"
+            
+            # Adjust column names based on what exists in the database
+            column_names = []
+            values = []
+            
+            # Always include these required columns
+            column_names.extend(['title', 'location', 'date', 'type'])
+            values.extend([title, location, date, 'user'])
+            
+            # Add optional columns if they exist in the database
+            if 'keywords' in columns:
+                column_names.append('keywords')
+                values.append(json.dumps(keywords))
+                
+            if 'description' in columns:
+                column_names.append('description')
+                values.append(description)
+                
+            if 'filename' in columns:
+                column_names.append('filename')
+                values.append(filename)
+                
+            if 'weight' in columns:
+                column_names.append('weight')
+                values.append(weight)
+                
+            if 'image_path' in columns:
+                column_names.append('image_path')
+                values.append(image_path)
+                
+            if 'embedding' in columns and 'embedding' in metadata:
+                column_names.append('embedding')
+                values.append(json.dumps(metadata['embedding']))
+            
+            # Build the SQL insert statement dynamically
+            placeholders = ','.join(['?'] * len(column_names))
+            sql = f"INSERT INTO memories ({','.join(column_names)}) VALUES ({placeholders})"
+            
+            # Execute the insert
+            cursor.execute(sql, values)
+            user_inserted += 1
+            
+            if user_inserted <= 3 or user_inserted % 20 == 0:
+                print(f"Inserted user memory {user_inserted}/{user_count}: {filename}")
+                
+        except Exception as e:
+            print(f"Error inserting user memory {filename}: {e}")
     
     conn.commit()
     conn.close()
-    return True  # Successfully seeded
+    
+    total_inserted = public_inserted + user_inserted
+    print(f"Successfully seeded database with {total_inserted} memories:")
+    print(f"- {public_inserted} public memories")
+    print(f"- {user_inserted} user memories")
+    
+    return True

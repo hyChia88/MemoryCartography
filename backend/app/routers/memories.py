@@ -1,10 +1,13 @@
 # backend/app/routers/memories.py
+import os
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
+from ..models import Memory, MemoryCreate, StatusResponse
 from ..services.memory_recommendation import MemoryRecommendationEngine
 from ..services.synthetic_memory_generator import get_synthetic_memory_generator
 from ..database import (
+    get_db_info,
     get_memories, 
     add_memory, 
     get_memory_by_id, 
@@ -14,10 +17,7 @@ from ..database import (
     seed_data
 )
 
-router = APIRouter(
-    prefix="/api/memories",
-    tags=["memories"],
-)
+router = APIRouter()
 
 # Models
 class KeywordItem(BaseModel):
@@ -58,19 +58,25 @@ recommendation_engine = MemoryRecommendationEngine()
 synthetic_memory_generator = get_synthetic_memory_generator()
 
 # Routes
+@router.get("/check")
+async def check_environment():
+    """Check environment settings."""
+    return {
+        "current_directory": os.getcwd(),
+        "database_path": os.path.abspath('memories.db'),
+        "database_exists": os.path.exists(os.path.abspath('memories.db')),
+        "env_vars": dict(os.environ)
+    }
+
+@router.get("/db-info", response_model=Dict[str, Any])
+async def get_database_info():
+    """Get information about the database."""
+    return get_db_info()
+
 @router.get("/", response_model=List[Memory])
 async def read_memories(type: str = "user"):
     """Get all memories of a specific type (user or public)."""
-    memories = get_memories(memory_type=type)
-    
-    # Add image paths
-    for memory in memories:
-        if type == "user":
-            memory["image_path"] = f"/images/user/{memory['filename']}"
-        else:
-            memory["image_path"] = f"/images/public/{memory['filename']}"
-    
-    return memories
+    return get_memories(memory_type=type)
 
 @router.get("/{memory_id}", response_model=Memory)
 async def read_memory(memory_id: int):
