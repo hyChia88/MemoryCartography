@@ -42,14 +42,12 @@ class SyntheticMemoryGenerator:
                 "highlighted_terms": []
             }
         
-        # Sort memories by weight (highest first)
-        sorted_memories = sorted(memories, key=lambda m: float(m.get('weight', 1.0)), reverse=True)
         
         # Use OpenAI for generating the narrative if available
         if self.openai_available:
-            return self._generate_with_openai(sorted_memories, search_term)
+            return self._generate_with_openai(memories, search_term)
         else:
-            return self._generate_fallback(sorted_memories, search_term)
+            return self._generate_fallback(memories, search_term)
     
     def _generate_with_openai(self, memories: List[Dict[str, Any]], search_term: Optional[str]) -> Dict[str, Any]:
         """Generate synthetic memory using OpenAI."""

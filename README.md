@@ -9,3 +9,12 @@ memory-cartography/
 │   │   │   └── useNarrative.js         # Hook for narrative generation
 │   ├── package.json
 │   └── README.md
+
+## Install
+```
+cd backend
+uvicorn app.main:app --reload
+
+cd frontend
+npm start
+```

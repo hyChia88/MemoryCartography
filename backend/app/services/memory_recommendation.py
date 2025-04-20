@@ -12,11 +12,14 @@ class MemoryRecommendationEngine:
         if not memories:
             return "No memories found to generate a narrative."
         
-        # Sort memories by weight
-        sorted_memories = sorted(memories, key=lambda m: m.get('weight', 1.0), reverse=True)
-        
         # Select top memories
-        selected_memories = sorted_memories[:3]
+        tol_weight = 0
+        i = 0
+        while tol_weight < 5.0:
+            tol_weight += memories[0].weights
+            i += 1
+
+        selected_memories = memories[:i]
         
         # Create narrative text
         narrative_parts = []

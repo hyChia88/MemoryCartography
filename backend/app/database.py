@@ -81,16 +81,3 @@ def search_memories(query, memory_type='user', limit=10):
 
     conn.close()
     return memories
-
-def update_memory_weight(memory_id, increment=0.1):
-    """Update memory weight."""
-    conn = sqlite3.connect('memories.db')
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE memories SET weight = weight + ? WHERE id = ?",
-        (increment, memory_id)
-    )
-
-    conn.commit()
-    conn.close()
-    return True
