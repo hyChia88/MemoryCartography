@@ -1,10 +1,20 @@
 venv
-backend\.env
-frontend\.env
-data
-Archive
-backend\data\metadata
-backend\app\memories.db
+# Environments
+.env
+*.env
+**/.env
+venv/
+**/venv/
+
+# Specific paths
+backend/.env
+frontend/.env
+
+data/
+Archive/
+backend/data/
+backend/app/memories.db
+
 backend\memories.db
 backend\data
 *.env
