@@ -7,3 +7,5 @@ backend\data\metadata
 backend\app\memories.db
 backend\memories.db
 backend\data
+*.env
+**/.env
