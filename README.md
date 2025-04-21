@@ -1,95 +1,111 @@
-# Memory Cartography
+# Memory Cartography, Reimagining Space, Memory, and Identity 🗺️💭
 
-memory-cartography/
-├── frontend/
-│   ├── src/
-│   │   ├── hooks/
-│   │   │   ├── useMemories.js          # Hook for fetching memories
-│   │   │   ├── useSearch.js            # Hook for search functionality
-│   │   │   └── useNarrative.js         # Hook for narrative generation
-│   ├── package.json
-│   └── README.md
+**Author:** Chia Hui Yen  
+**Mentor:** Professor Jimmy Cheng   
+**Date:** 2025 Spring     
 
-## Implemetation
-1. Scrape data:
-```
-python backend\scripts\pexels_scraper.py
-```
-Put all raw pics in: `backend\data\raw\pubic_photos` & `backend\data\raw\user_photos`
+![alt text](image-1.png)
+![alt text](image-2.png)
 
-2. Process data:
-```
-python backend\scripts\process_data.py
-```
+## 🌟 Project Overview
 
-3. Run
-```
-cd backend
-uvicorn app.main:app --reload
+Memory Cartography is an innovative digital humanities project that explores the fluid, fragmented nature of spatial memory. Inspired by philosophers like Gaston Bachelard and Bernard Tschumi, this application challenges the traditional understanding of place as a static concept, instead revealing memory as a dynamic, deeply personal landscape.
 
-cd frontend
-npm start
-```
+## 🧭 Philosophical Foundations
 
+At the intersection of phenomenology, digital humanities, and artificial intelligence, our project asks fundamental questions:
+- How do personal memories of place evolve and transform over time?
+- Can technology help us understand the subjective nature of spatial experience?
+- What emerges when we map the intricate connections between personal and collective memories?
 
-### Memory Cartography Implementation Guide
+## ✨ Key Features
 
-I've made several changes to improve your Memory Cartography application, focusing specifically on the weight-based memory sorting and narrative generation. Here's what's changed and how to implement these improvements:
+1. **Memory Cartography**
+   - Semantic search across personal and public memory archives
+   - AI-generated narrative compositions
+   - Dynamic memory weighting and exploration
 
-## Backend Changes
+2. **Dual Memory Perspectives**
+   - Personal Memory Collection
+   - Public Memory Database
+   - Seamless navigation between individual and collective experiences
 
-### 1. Enhanced Search Endpoint (`main.py`)
+3. **Innovative Interaction**
+   - Contextual memory generation
+   - Interactive memory prioritization
+   - Multidimensional exploration of spatial narratives
 
-The `search_memories_endpoint` now includes:
-- A new `sort_by` parameter that accepts "weight", "date", or "relevance"
-- Better sorting functionality that properly respects memory weights
-- Retrieving more initial results before sorting and limiting (to ensure you get the best matches)
-- Better error handling and logging
+## 🤖 Technical Architecture
 
-### 2. Improved Narrative Generation (`main.py`)
+### Core Technologies
+- **Frontend**: React with TypeScript
+- **Backend**: FastAPI (Python)
+- **AI Integration**: OpenAI GPT for narrative generation
+- **Semantic Processing**: scikit-learn embeddings
 
-The `generate_narrative_endpoint` now uses:
-- Weight-prioritized memory selection - higher weight memories are guaranteed to be included
-- A "total weight target" approach that ensures important memories are included
-- Chronological reordering of selected memories to create more coherent narratives
-- Better logging to track which memories are being used
+### Computational Methods
+- Multimodal embedding
+- Semantic similarity search
+- Dynamic narrative generation
 
-## Frontend Changes (`MemoryApp.tsx`)
+## 🔍 Methodological Approach
 
-The React component now includes:
-- A new sort selector UI with options for weight, date, and relevance
-- Client-side re-sorting when weights are modified
-- Immediate updates to the UI when weights change
-- Enter key support on the search field for better usability
-- Empty state handling when no results are found
+Drawing from interdisciplinary research in:
+- Phenomenological philosophy
+- Digital humanities
+- Cognitive science
+- Machine learning
 
-## How to Implement
+## 🚀 Installation
 
-1. **Update `main.py`**:
-   - Replace the `search_memories_endpoint` with the new version
-   - Replace the `generate_narrative_endpoint` with the new version
+### Prerequisites
+- Node.js (v14+)
+- Python (v3.8+)
+- OpenAI API Key
 
-2. **Update `MemoryApp.tsx`**:
-   - Replace your React component with the updated version
-   - This adds the sorting UI and improves the memory weight handling
+### 🔧 Implementation Steps
+1. Data Scraping
+   Collect images for public and user photo databases:
+   bashpython backend/scripts/pexels_scraper.py
+   Images will be saved in:
 
-3. **Additional Dependencies**:
-   - No new dependencies are required
+   `backend/data/raw/public_photos`  
+   `backend/data/raw/user_photos`
 
-## Expected Behavior
+2. Data Processing
+   Prepare and process the collected images:
+   ```
+   python backend/scripts/process_data.py
+   ```
 
-After implementing these changes:
+3. Run the Application
+   Start the backend server:
+   ```
+   cd backend
+   uvicorn app.main:app --reload
+   ```
+   In a new terminal, start the frontend:
+   ```
+   cd frontend
+   npm install
+   npm start
+   ```
 
-1. **Search Results**:
-   - Memory cards will be sorted by weight by default
-   - Users can change sorting to date or relevance as needed
-   - Memories with higher weights appear at the top
+## 🌈 Potential Applications
 
-2. **Weight Adjustments**:
-   - When you increase or decrease a memory's weight, it will automatically move to the correct position
-   - The visual weight indicator will update immediately
+1. **Experiential Research**
+   - Cultural memory analysis
+   - Spatial experience mapping
+   - Personal reflection tools
 
-3. **Narrative Generation**:
-   - Narratives will prioritize higher-weight memories
-   - The system will still ensure a mixture of memories for interesting narratives
-   - Important memories will be more likely to appear in narratives
+2. **Interdisciplinary Insights**
+   - Comparative memory studies
+   - Narrative generation
+   - Spatial humanities research
+
+## 🏆 Acknowledgements
+
+Inspired by the works of:
+- Gaston Bachelard
+- Bernard Tschumi
+- Jiang Xun
