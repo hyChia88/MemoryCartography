@@ -1,6 +1,6 @@
 venv
-backend/.env
-frontend/.env
+backend\.env
+frontend\.env
 data
 Archive
 backend\data\metadata
