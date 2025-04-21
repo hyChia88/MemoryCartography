@@ -15,7 +15,7 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install torch torchvision clip exifread geopy pillow tqdm numpy
 
-# Step 2: Data Collection
+# Step 1: Data Collection
 For User Photos:
 bash# Manually copy your personal photos to the raw user photos directory
 cp /path/to/your/photos/* data/raw/user_photos/
@@ -77,15 +77,20 @@ data/metadata/public_metadata.json: A JSON file mapping public photo filenames t
 
 Example metadata structure:
 json{
-  "user_0001.jpg": {
-    "original_path": "data/raw/user_photos/kuala_lumpur_trip_123.jpg",
-    "location": "Kuala Lumpur, Malaysia",
-    "date": "2023-05-15",
-    "keywords": ["city", "skyline", "building", "modern", "night", "lights", "architecture", "urban", "tower", "sky"],
-    "description": "Image taken at Kuala Lumpur, Malaysia. Features: city, skyline, building, modern, night"
-  },
-  ...
+  "public_0001.jpg": {
+    "original_path": "data\\raw\\public_photos\\Bentong\\pexels_1056251.jpg",
+    "location": "Bentong",
+    "date": "2025-04-18",
+    "keywords": [
+      "kitten",
+      "sleeping", ...
+    ],
+    "description": "The image depicts a small tabby kitten peacefully sleeping on a wooden surface. The warm, soft lighting enhances the cozy and serene mood, highlighting the kitten's relaxed posture and soft fur.",
+    "weight": 1.2,
+    "embedding": []
+  }
 }
+
 SQLite Database:
 
 data/metadata/memories.db: A SQLite database with a memories table containing all metadata
@@ -115,6 +120,19 @@ CREATE TABLE IF NOT EXISTS memories (
     weight REAL DEFAULT 1.0,
     embedding TEXT
 )
+
+2. Recommendation system: backend\app\services\memory_recommendation.py
+(by query, check the closest set of memory and sort, adjust tol_weight based on weight of memory and recency, latest the higher, just update the memory weight)
+- when user search a certain keywords, recommendation sysatm proposed a list of memory-event sort by the matching/related score of the event and the keywords (more and closer the best), final memory list will take the first x event that sum more that certain number (we can set it 3.0 first), 
+- present them at the MemoryList
+- user can click the event to make the certain weight of the event higher
+- the keyword in the event's keyword will be hightlight
+
+3. Synthetic memory: synthetic_memory.py
+- according to sorted memory event list from recommendation system,
+- stack it and put into open ai, ask open ai to according the timeline and importancy of the events, mimick human writing diary, write a few sentence to describ it,
+- show the synthetic memory in the generated ouptu text area, bold and red color font for the keywords dirext realted to the original event and black for the orgers
+
 
 
 ---

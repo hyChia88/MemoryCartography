@@ -3,7 +3,7 @@ import os
 
 def reset_database():
     # Define database path
-    db_path = 'memories.db'
+    db_path = 'backend\data\metadata\memories.db'
     
     # Remove existing database if it exists
     if os.path.exists(db_path):

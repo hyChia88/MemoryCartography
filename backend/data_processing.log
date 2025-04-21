@@ -1,0 +1,309 @@
+2025-04-20 18:59:04,337 - INFO: Processing user photos...
+2025-04-20 18:59:04,342 - INFO: Found 30 images in data\raw\user_photos
+2025-04-20 18:59:04,346 - ERROR: Error extracting metadata for data\raw\user_photos\images (1).jpg: name 'img' is not defined
+2025-04-20 18:59:04,918 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:04,920 - ERROR: Emotional analysis failed for data\raw\user_photos\images (1).jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:04,925 - ERROR: Error extracting metadata for data\raw\user_photos\images.jpg: name 'img' is not defined
+2025-04-20 18:59:05,096 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:05,097 - ERROR: Emotional analysis failed for data\raw\user_photos\images.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:05,101 - ERROR: Error extracting metadata for data\raw\user_photos\pexels_1206101.jpg: name 'img' is not defined
+2025-04-20 18:59:05,451 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:05,454 - ERROR: Emotional analysis failed for data\raw\user_photos\pexels_1206101.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:05,456 - ERROR: Error extracting metadata for data\raw\user_photos\pexels_28196491.jpg: name 'img' is not defined
+2025-04-20 18:59:05,715 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:05,715 - ERROR: Emotional analysis failed for data\raw\user_photos\pexels_28196491.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:05,729 - ERROR: Error extracting metadata for data\raw\user_photos\user_0001.jpg: name 'img' is not defined
+2025-04-20 18:59:05,993 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:05,993 - ERROR: Emotional analysis failed for data\raw\user_photos\user_0001.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:06,006 - ERROR: Error extracting metadata for data\raw\user_photos\user_0005.jpg: name 'img' is not defined
+2025-04-20 18:59:11,063 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:11,064 - ERROR: Emotional analysis failed for data\raw\user_photos\user_0005.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:11,081 - ERROR: Error extracting metadata for data\raw\user_photos\user_0009.jpg: name 'img' is not defined
+2025-04-20 18:59:11,389 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:11,390 - ERROR: Emotional analysis failed for data\raw\user_photos\user_0009.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:11,404 - ERROR: Error extracting metadata for data\raw\user_photos\user_0017.jpg: name 'img' is not defined
+2025-04-20 18:59:11,659 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:11,659 - ERROR: Emotional analysis failed for data\raw\user_photos\user_0017.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:11,672 - ERROR: Error extracting metadata for data\raw\user_photos\user_0021.jpg: name 'img' is not defined
+2025-04-20 18:59:11,925 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:11,926 - ERROR: Emotional analysis failed for data\raw\user_photos\user_0021.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:11,938 - ERROR: Error extracting metadata for data\raw\user_photos\user_0029.jpg: name 'img' is not defined
+2025-04-20 18:59:12,220 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:12,221 - ERROR: Emotional analysis failed for data\raw\user_photos\user_0029.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:12,233 - ERROR: Error extracting metadata for data\raw\user_photos\user_0033.jpg: name 'img' is not defined
+2025-04-20 18:59:12,637 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+2025-04-20 18:59:12,639 - ERROR: Emotional analysis failed for data\raw\user_photos\user_0033.jpg: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+2025-04-20 18:59:12,656 - ERROR: Error extracting metadata for data\raw\user_photos\user_0041.jpg: name 'img' is not defined
+2025-04-20 19:01:09,576 - INFO: Processing user photos...
+2025-04-20 19:01:09,582 - INFO: Found 30 images in data\raw\user_photos
+2025-04-20 19:01:12,607 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:15,009 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:17,206 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:19,281 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:22,755 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:31,936 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:35,274 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:37,611 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:40,437 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:43,474 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:45,829 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:01:54,282 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:02,452 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:11,038 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:18,126 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:25,311 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:34,090 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:45,545 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:54,841 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:02:58,157 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:01,551 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:06,876 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:09,160 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:11,839 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:16,225 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:19,864 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:22,016 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:24,732 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:32,260 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:35,183 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:35,199 - INFO: Processing public photos...
+2025-04-20 19:03:35,203 - INFO: Found 20 images in data\raw\public_photos
+2025-04-20 19:03:37,905 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:41,741 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:44,249 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:46,953 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:49,251 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:51,885 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:54,587 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:56,585 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:03:58,868 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:01,663 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:05,587 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:08,811 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:11,895 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:15,295 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:17,697 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:19,976 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:22,718 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:26,733 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:31,178 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:38,530 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 19:04:38,545 - INFO: Creating SQLite database...
+2025-04-20 19:04:38,579 - INFO: User photos processed: 30
+2025-04-20 19:04:38,579 - INFO: Public photos processed: 20
+2025-04-20 19:04:38,579 - INFO: Database created at: data\metadata\memories.db
+2025-04-20 21:07:20,160 - INFO: Processing user photos...
+2025-04-20 21:07:20,167 - INFO: Found 30 images in data\raw\user_photos
+2025-04-20 21:07:24,032 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:24,038 - INFO: Successfully analyzed data\raw\user_photos\images (1).jpg: 4 keywords, description length: 506
+2025-04-20 21:07:27,167 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:27,172 - INFO: Successfully analyzed data\raw\user_photos\images.jpg: 4 keywords, description length: 508
+2025-04-20 21:07:30,217 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:30,219 - INFO: Successfully analyzed data\raw\user_photos\pexels_1206101.jpg: 5 keywords, description length: 494
+2025-04-20 21:07:32,817 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:32,823 - INFO: Successfully analyzed data\raw\user_photos\pexels_28196491.jpg: 4 keywords, description length: 441
+2025-04-20 21:07:34,923 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:34,929 - INFO: Successfully analyzed data\raw\user_photos\user_0001.jpg: 4 keywords, description length: 387
+2025-04-20 21:07:43,925 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:43,927 - INFO: Successfully analyzed data\raw\user_photos\user_0005.jpg: 4 keywords, description length: 389
+2025-04-20 21:07:47,334 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:47,340 - INFO: Successfully analyzed data\raw\user_photos\user_0009.jpg: 4 keywords, description length: 477
+2025-04-20 21:07:51,156 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:51,165 - INFO: Successfully analyzed data\raw\user_photos\user_0017.jpg: 4 keywords, description length: 496
+2025-04-20 21:07:54,604 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:54,610 - INFO: Successfully analyzed data\raw\user_photos\user_0021.jpg: 5 keywords, description length: 500
+2025-04-20 21:07:58,065 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:07:58,070 - INFO: Successfully analyzed data\raw\user_photos\user_0029.jpg: 5 keywords, description length: 540
+2025-04-20 21:08:01,672 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:08:01,677 - INFO: Successfully analyzed data\raw\user_photos\user_0033.jpg: 5 keywords, description length: 380
+2025-04-20 21:08:13,840 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:08:13,844 - INFO: Successfully analyzed data\raw\user_photos\user_0041.jpg: 4 keywords, description length: 457
+2025-04-20 21:08:23,177 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:08:23,179 - INFO: Successfully analyzed data\raw\user_photos\user_0049.jpg: 5 keywords, description length: 603
+2025-04-20 21:08:31,455 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:08:31,461 - INFO: Successfully analyzed data\raw\user_photos\user_0053.jpg: 4 keywords, description length: 488
+2025-04-20 21:08:39,735 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:08:39,740 - INFO: Successfully analyzed data\raw\user_photos\user_0061.jpg: 5 keywords, description length: 451
+2025-04-20 21:08:50,662 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:08:50,664 - INFO: Successfully analyzed data\raw\user_photos\user_0069.jpg: 5 keywords, description length: 381
+2025-04-20 21:09:00,021 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:00,023 - INFO: Successfully analyzed data\raw\user_photos\user_0073.jpg: 4 keywords, description length: 410
+2025-04-20 21:09:11,454 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:11,460 - INFO: Successfully analyzed data\raw\user_photos\user_0077.jpg: 4 keywords, description length: 465
+2025-04-20 21:09:21,961 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:21,963 - INFO: Successfully analyzed data\raw\user_photos\user_0081.jpg: 5 keywords, description length: 406
+2025-04-20 21:09:27,983 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:27,984 - INFO: Successfully analyzed data\raw\user_photos\user_0089.jpg: 4 keywords, description length: 407
+2025-04-20 21:09:31,198 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:31,199 - INFO: Successfully analyzed data\raw\user_photos\user_0101.jpg: 4 keywords, description length: 446
+2025-04-20 21:09:34,970 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:34,972 - INFO: Successfully analyzed data\raw\user_photos\user_0105.jpg: 4 keywords, description length: 464
+2025-04-20 21:09:40,125 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:40,130 - INFO: Successfully analyzed data\raw\user_photos\user_0109.jpg: 4 keywords, description length: 394
+2025-04-20 21:09:44,671 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:44,672 - INFO: Successfully analyzed data\raw\user_photos\user_0113.jpg: 4 keywords, description length: 444
+2025-04-20 21:09:49,343 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:49,345 - INFO: Successfully analyzed data\raw\user_photos\user_0117.jpg: 4 keywords, description length: 443
+2025-04-20 21:09:53,862 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:53,868 - INFO: Successfully analyzed data\raw\user_photos\user_0133.jpg: 4 keywords, description length: 371
+2025-04-20 21:09:55,580 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:55,581 - INFO: Successfully analyzed data\raw\user_photos\user_0185.jpg: 4 keywords, description length: 295
+2025-04-20 21:09:59,149 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:09:59,152 - INFO: Successfully analyzed data\raw\user_photos\user_0221.jpg: 5 keywords, description length: 525
+2025-04-20 21:10:02,575 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:02,577 - INFO: Successfully analyzed data\raw\user_photos\user_0225.jpg: 4 keywords, description length: 473
+2025-04-20 21:10:06,251 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:06,252 - INFO: Successfully analyzed data\raw\user_photos\user_0229.jpg: 5 keywords, description length: 534
+2025-04-20 21:10:06,257 - INFO: Processing public photos...
+2025-04-20 21:10:06,261 - INFO: Found 20 images in data\raw\public_photos
+2025-04-20 21:10:10,206 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:10,207 - INFO: Successfully analyzed data\raw\public_photos\37279917811_5407f191ae_o.jpg: 5 keywords, description length: 608
+2025-04-20 21:10:14,567 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:14,569 - INFO: Successfully analyzed data\raw\public_photos\37285114151_21eb3d8be7_o.jpg: 5 keywords, description length: 570
+2025-04-20 21:10:18,443 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:18,444 - INFO: Successfully analyzed data\raw\public_photos\37421758115_73aa95e141_o.jpg: 4 keywords, description length: 395
+2025-04-20 21:10:21,880 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:21,882 - INFO: Successfully analyzed data\raw\public_photos\pexels_1056251.jpg: 5 keywords, description length: 360
+2025-04-20 21:10:27,920 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:27,922 - INFO: Successfully analyzed data\raw\public_photos\pexels_1056467.jpg: 5 keywords, description length: 409
+2025-04-20 21:10:31,052 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:31,054 - INFO: Successfully analyzed data\raw\public_photos\pexels_1173777.jpg: 5 keywords, description length: 468
+2025-04-20 21:10:34,033 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:34,036 - INFO: Successfully analyzed data\raw\public_photos\pexels_130576.jpg: 5 keywords, description length: 440
+2025-04-20 21:10:37,795 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:37,796 - INFO: Successfully analyzed data\raw\public_photos\pexels_13216798.jpg: 5 keywords, description length: 448
+2025-04-20 21:10:41,055 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:41,057 - INFO: Successfully analyzed data\raw\public_photos\pexels_2695412.jpg: 5 keywords, description length: 462
+2025-04-20 21:10:44,160 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:44,161 - INFO: Successfully analyzed data\raw\public_photos\pexels_3805975.jpg: 5 keywords, description length: 501
+2025-04-20 21:10:50,518 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:50,520 - INFO: Successfully analyzed data\raw\public_photos\pexels_4842306.jpg: 5 keywords, description length: 404
+2025-04-20 21:10:53,866 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:10:53,868 - INFO: Successfully analyzed data\raw\public_photos\pexels_4842315.jpg: 4 keywords, description length: 426
+2025-04-20 21:11:03,805 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:03,807 - INFO: Successfully analyzed data\raw\public_photos\pexels_4847538.jpg: 5 keywords, description length: 502
+2025-04-20 21:11:11,009 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:11,011 - INFO: Successfully analyzed data\raw\public_photos\pexels_4847563.jpg: 4 keywords, description length: 471
+2025-04-20 21:11:14,476 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:14,478 - INFO: Successfully analyzed data\raw\public_photos\pexels_4847581.jpg: 4 keywords, description length: 525
+2025-04-20 21:11:18,769 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:18,773 - INFO: Successfully analyzed data\raw\public_photos\pexels_4856367.jpg: 5 keywords, description length: 583
+2025-04-20 21:11:21,969 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:21,970 - INFO: Successfully analyzed data\raw\public_photos\pexels_4856368.jpg: 5 keywords, description length: 465
+2025-04-20 21:11:26,171 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:26,173 - INFO: Successfully analyzed data\raw\public_photos\pexels_5365875.jpg: 4 keywords, description length: 475
+2025-04-20 21:11:30,797 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:30,799 - INFO: Successfully analyzed data\raw\public_photos\the-waterfall.jpg: 5 keywords, description length: 440
+2025-04-20 21:11:37,649 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:11:37,651 - INFO: Successfully analyzed data\raw\public_photos\travelbeckons-bentong-street-art.jpg: 4 keywords, description length: 456
+2025-04-20 21:11:37,657 - INFO: Creating SQLite database...
+2025-04-20 21:11:37,673 - ERROR: Data processing failed: table memories has no column named embedding
+2025-04-20 21:31:43,269 - INFO: Processing user photos...
+2025-04-20 21:31:43,275 - INFO: Found 30 images in data\raw\user_photos
+2025-04-20 21:31:46,220 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:31:46,224 - INFO: Successfully analyzed data\raw\user_photos\images (1).jpg: 4 keywords, description length: 533
+2025-04-20 21:31:50,275 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:31:50,276 - INFO: Successfully analyzed data\raw\user_photos\images.jpg: 5 keywords, description length: 425
+2025-04-20 21:31:54,046 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:31:54,048 - INFO: Successfully analyzed data\raw\user_photos\pexels_1206101.jpg: 5 keywords, description length: 460
+2025-04-20 21:31:57,222 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:31:57,224 - INFO: Successfully analyzed data\raw\user_photos\pexels_28196491.jpg: 4 keywords, description length: 525
+2025-04-20 21:31:59,957 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:31:59,961 - INFO: Successfully analyzed data\raw\user_photos\user_0001.jpg: 4 keywords, description length: 549
+2025-04-20 21:32:11,226 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:11,228 - INFO: Successfully analyzed data\raw\user_photos\user_0005.jpg: 4 keywords, description length: 326
+2025-04-20 21:32:14,699 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:14,701 - INFO: Successfully analyzed data\raw\user_photos\user_0009.jpg: 5 keywords, description length: 495
+2025-04-20 21:32:18,324 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:18,326 - INFO: Successfully analyzed data\raw\user_photos\user_0017.jpg: 5 keywords, description length: 464
+2025-04-20 21:32:21,205 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:21,207 - INFO: Successfully analyzed data\raw\user_photos\user_0021.jpg: 5 keywords, description length: 482
+2025-04-20 21:32:24,035 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:24,038 - INFO: Successfully analyzed data\raw\user_photos\user_0029.jpg: 4 keywords, description length: 475
+2025-04-20 21:32:28,458 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:28,463 - INFO: Successfully analyzed data\raw\user_photos\user_0033.jpg: 5 keywords, description length: 399
+2025-04-20 21:32:39,256 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:39,260 - INFO: Successfully analyzed data\raw\user_photos\user_0041.jpg: 4 keywords, description length: 453
+2025-04-20 21:32:46,555 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:46,557 - INFO: Successfully analyzed data\raw\user_photos\user_0049.jpg: 5 keywords, description length: 423
+2025-04-20 21:32:55,233 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:32:55,237 - INFO: Successfully analyzed data\raw\user_photos\user_0053.jpg: 4 keywords, description length: 405
+2025-04-20 21:33:03,794 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:33:03,799 - INFO: Successfully analyzed data\raw\user_photos\user_0061.jpg: 5 keywords, description length: 488
+2025-04-20 21:33:12,208 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:33:12,210 - INFO: Successfully analyzed data\raw\user_photos\user_0069.jpg: 5 keywords, description length: 360
+2025-04-20 21:33:22,281 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:33:22,283 - INFO: Successfully analyzed data\raw\user_photos\user_0073.jpg: 4 keywords, description length: 457
+2025-04-20 21:33:33,274 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:33:33,276 - INFO: Successfully analyzed data\raw\user_photos\user_0077.jpg: 5 keywords, description length: 390
+2025-04-20 21:33:44,360 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:33:44,367 - INFO: Successfully analyzed data\raw\user_photos\user_0081.jpg: 5 keywords, description length: 428
+2025-04-20 21:33:49,646 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:33:49,648 - INFO: Successfully analyzed data\raw\user_photos\user_0089.jpg: 4 keywords, description length: 401
+2025-04-20 21:35:37,866 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:35:37,868 - INFO: Successfully analyzed data\raw\user_photos\user_0101.jpg: 4 keywords, description length: 405
+2025-04-20 21:35:42,035 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:35:42,037 - INFO: Successfully analyzed data\raw\user_photos\user_0105.jpg: 4 keywords, description length: 362
+2025-04-20 21:35:45,697 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:35:45,699 - INFO: Successfully analyzed data\raw\user_photos\user_0109.jpg: 4 keywords, description length: 294
+2025-04-20 21:35:49,691 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:35:49,696 - INFO: Successfully analyzed data\raw\user_photos\user_0113.jpg: 4 keywords, description length: 355
+2025-04-20 21:35:53,966 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:35:53,970 - INFO: Successfully analyzed data\raw\user_photos\user_0117.jpg: 5 keywords, description length: 362
+2025-04-20 21:35:58,592 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:35:58,594 - INFO: Successfully analyzed data\raw\user_photos\user_0133.jpg: 4 keywords, description length: 445
+2025-04-20 21:36:01,510 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:01,511 - INFO: Successfully analyzed data\raw\user_photos\user_0185.jpg: 4 keywords, description length: 391
+2025-04-20 21:36:06,507 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:06,512 - INFO: Successfully analyzed data\raw\user_photos\user_0221.jpg: 5 keywords, description length: 578
+2025-04-20 21:36:09,881 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:09,882 - INFO: Successfully analyzed data\raw\user_photos\user_0225.jpg: 5 keywords, description length: 490
+2025-04-20 21:36:14,814 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:14,817 - INFO: Successfully analyzed data\raw\user_photos\user_0229.jpg: 5 keywords, description length: 502
+2025-04-20 21:36:14,822 - INFO: Processing public photos...
+2025-04-20 21:36:14,826 - INFO: Found 20 images in data\raw\public_photos
+2025-04-20 21:36:19,418 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:19,424 - INFO: Successfully analyzed data\raw\public_photos\37279917811_5407f191ae_o.jpg: 4 keywords, description length: 533
+2025-04-20 21:36:22,785 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:22,786 - INFO: Successfully analyzed data\raw\public_photos\37285114151_21eb3d8be7_o.jpg: 5 keywords, description length: 518
+2025-04-20 21:36:26,595 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:26,596 - INFO: Successfully analyzed data\raw\public_photos\37421758115_73aa95e141_o.jpg: 5 keywords, description length: 404
+2025-04-20 21:36:36,965 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:36,966 - INFO: Successfully analyzed data\raw\public_photos\pexels_1056251.jpg: 5 keywords, description length: 443
+2025-04-20 21:36:40,677 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:40,678 - INFO: Successfully analyzed data\raw\public_photos\pexels_1056467.jpg: 4 keywords, description length: 450
+2025-04-20 21:36:44,067 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:44,070 - INFO: Successfully analyzed data\raw\public_photos\pexels_1173777.jpg: 5 keywords, description length: 427
+2025-04-20 21:36:47,631 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:47,633 - INFO: Successfully analyzed data\raw\public_photos\pexels_130576.jpg: 5 keywords, description length: 435
+2025-04-20 21:36:50,815 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:50,820 - INFO: Successfully analyzed data\raw\public_photos\pexels_13216798.jpg: 5 keywords, description length: 473
+2025-04-20 21:36:54,538 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:54,539 - INFO: Successfully analyzed data\raw\public_photos\pexels_2695412.jpg: 5 keywords, description length: 528
+2025-04-20 21:36:58,653 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:36:58,658 - INFO: Successfully analyzed data\raw\public_photos\pexels_3805975.jpg: 5 keywords, description length: 410
+2025-04-20 21:37:02,618 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:02,624 - INFO: Successfully analyzed data\raw\public_photos\pexels_4842306.jpg: 5 keywords, description length: 536
+2025-04-20 21:37:06,736 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:06,739 - INFO: Successfully analyzed data\raw\public_photos\pexels_4842315.jpg: 4 keywords, description length: 550
+2025-04-20 21:37:10,422 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:10,427 - INFO: Successfully analyzed data\raw\public_photos\pexels_4847538.jpg: 5 keywords, description length: 386
+2025-04-20 21:37:14,627 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:14,632 - INFO: Successfully analyzed data\raw\public_photos\pexels_4847563.jpg: 5 keywords, description length: 543
+2025-04-20 21:37:18,971 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:18,972 - INFO: Successfully analyzed data\raw\public_photos\pexels_4847581.jpg: 4 keywords, description length: 444
+2025-04-20 21:37:25,710 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:25,711 - INFO: Successfully analyzed data\raw\public_photos\pexels_4856367.jpg: 5 keywords, description length: 501
+2025-04-20 21:37:29,459 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:29,464 - INFO: Successfully analyzed data\raw\public_photos\pexels_4856368.jpg: 5 keywords, description length: 484
+2025-04-20 21:37:34,118 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:34,122 - INFO: Successfully analyzed data\raw\public_photos\pexels_5365875.jpg: 5 keywords, description length: 519
+2025-04-20 21:37:39,422 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:39,423 - INFO: Successfully analyzed data\raw\public_photos\the-waterfall.jpg: 5 keywords, description length: 585
+2025-04-20 21:37:47,541 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-20 21:37:47,547 - INFO: Successfully analyzed data\raw\public_photos\travelbeckons-bentong-street-art.jpg: 5 keywords, description length: 498
+2025-04-20 21:37:47,554 - INFO: Creating SQLite database...
+2025-04-20 21:37:47,615 - INFO: Adding embedding column to existing database
+2025-04-20 21:37:47,638 - INFO: User photos processed: 30
+2025-04-20 21:37:47,639 - INFO: Public photos processed: 20
+2025-04-20 21:37:47,639 - INFO: Database created at: data\metadata\memories.db

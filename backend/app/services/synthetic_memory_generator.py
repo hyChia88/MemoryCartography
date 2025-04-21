@@ -42,7 +42,6 @@ class SyntheticMemoryGenerator:
                 "highlighted_terms": []
             }
         
-        
         # Use OpenAI for generating the narrative if available
         if self.openai_available:
             return self._generate_with_openai(memories, search_term)
@@ -71,24 +70,26 @@ class SyntheticMemoryGenerator:
                 
                 memory_descriptions.append(desc)
             
-            # Create the prompt for OpenAI
+            # Create the prompt for OpenAI - Explicitly mention JSON to resolve the API error
             system_prompt = """You are a personal memory synthesizer that creates natural, diary-like narratives from memory fragments. 
             Your task is to weave together multiple memories into a coherent narrative that sounds like someone reminiscing.
             
-            Follow these guidelines:
+            IMPORTANT: Respond ONLY in the following strict JSON format:
+            {
+              "narrative": "A diary-like narrative (3-5 sentences)",
+              "keywords": ["keyword1", "keyword2", ...],
+              "highlighted_terms": ["term1", "term2", ...]
+            }
+            
+            Guidelines for generating the narrative:
             1. Write in first person, as if these are your personal memories
             2. Maintain chronological order when applicable
             3. Focus on sensory details and emotions
             4. Make connections between different memories when possible
             5. Use a natural, conversational tone
-            6. Keep the narrative focused on the memories provided
-            7. Highlight important keywords in the narrative with *asterisks*
-            8. The text should be 3-5 sentences - concise but evocative
-            
-            The output should include:
-            1. A diary-like narrative (3-5 sentences)
-            2. A list of the 5-10 most important keywords that were used in the narrative
-            3. A list of terms that were highlighted with asterisks"""
+            6. Focus on the memories provided
+            7. Highlight important keywords by using *asterisks*
+            8. Keep the narrative concise (3-5 sentences)"""
             
             memories_text = "\n\n".join(memory_descriptions)
             
