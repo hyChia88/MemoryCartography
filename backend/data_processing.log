@@ -1119,3 +1119,550 @@
 2025-04-22 22:06:41,520 - INFO: User photos processed: 100
 2025-04-22 22:06:41,521 - INFO: Public photos processed: 100
 2025-04-22 22:06:41,521 - INFO: Database created at: data\metadata\memories.db
+2025-04-24 16:53:10,769 - INFO: Processing user photos...
+2025-04-24 16:53:10,793 - INFO: Found 100 images in data\raw\user_photos
+2025-04-24 16:53:10,857 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:11,354 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:12,273 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:13,203 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:14,215 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:15,253 - WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Read timed out. (read timeout=1)")': /reverse?lat=3.2884527777777777&lon=101.61682222222221&format=json&addressdetails=1
+2025-04-24 16:53:16,321 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:17,273 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:18,279 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:19,220 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:20,239 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:21,199 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:22,220 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:23,236 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:24,222 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:25,167 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:26,203 - WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Read timed out. (read timeout=1)")': /reverse?lat=3.2884166666666665&lon=101.61679166666666&format=json&addressdetails=1
+2025-04-24 16:53:27,287 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:28,305 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:29,254 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:30,281 - WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Read timed out. (read timeout=1)")': /reverse?lat=3.1463722222222223&lon=101.57146388888889&format=json&addressdetails=1
+2025-04-24 16:53:31,180 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:53:32,215 - WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Read timed out. (read timeout=1)")': /reverse?lat=3.146341666666667&lon=101.57148055555555&format=json&addressdetails=1
+2025-04-24 16:53:33,237 - WARNING: OpenAI client not initialized. Skipping emotional analysis.
+2025-04-24 16:55:32,489 - INFO: Processing user photos...
+2025-04-24 16:55:32,508 - INFO: Found 100 images in data\raw\user_photos
+2025-04-24 16:55:41,033 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:55:41,046 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\86CDF64C-FACD-4DB3-A498-C686BD329555.jpg: 5 keywords, description length: 491
+2025-04-24 16:55:50,924 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:55:50,929 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0150.JPEG: 5 keywords, description length: 591
+2025-04-24 16:55:59,251 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:55:59,253 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0155.JPEG: 5 keywords, description length: 476
+2025-04-24 16:56:07,702 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:56:07,705 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0156.JPEG: 5 keywords, description length: 573
+2025-04-24 16:56:14,086 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:56:14,088 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0157.JPEG: 5 keywords, description length: 472
+2025-04-24 16:56:22,810 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:56:22,811 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0158.JPEG: 5 keywords, description length: 530
+2025-04-24 16:56:23,835 - WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ReadTimeoutError("HTTPSConnectionPool(host='nominatim.openstreetmap.org', port=443): Read timed out. (read timeout=1)")': /reverse?lat=3.2884527777777777&lon=101.61682777777777&format=json&addressdetails=1
+2025-04-24 16:57:44,590 - INFO: Processing user photos...
+2025-04-24 16:57:44,594 - INFO: Found 5 images in data\raw\user_photos
+2025-04-24 16:57:51,482 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:57:51,484 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2727.JPEG: 5 keywords, description length: 577
+2025-04-24 16:57:58,332 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:57:58,334 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2729.JPEG: 5 keywords, description length: 472
+2025-04-24 16:58:04,475 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:04,477 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2736.JPEG: 4 keywords, description length: 568
+2025-04-24 16:58:10,077 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:10,082 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4732.JPEG: 5 keywords, description length: 384
+2025-04-24 16:58:15,827 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:15,829 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4927.JPEG: 4 keywords, description length: 434
+2025-04-24 16:58:15,836 - INFO: Processing public photos...
+2025-04-24 16:58:15,839 - INFO: Found 7 images in data\raw\public_photos
+2025-04-24 16:58:19,448 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:19,450 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_20663741.jpg: 4 keywords, description length: 478
+2025-04-24 16:58:24,343 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:24,344 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_26967351.jpg: 5 keywords, description length: 420
+2025-04-24 16:58:31,208 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:31,213 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_27036758.jpg: 5 keywords, description length: 404
+2025-04-24 16:58:37,195 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:37,196 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665731.jpg: 5 keywords, description length: 530
+2025-04-24 16:58:46,018 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:46,021 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665734.jpg: 5 keywords, description length: 540
+2025-04-24 16:58:52,574 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:52,575 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31700692.jpg: 5 keywords, description length: 578
+2025-04-24 16:58:57,522 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 16:58:57,523 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31738005.jpg: 5 keywords, description length: 537
+2025-04-24 16:58:57,529 - INFO: Creating SQLite database...
+2025-04-24 16:58:57,542 - INFO: User photos processed: 5
+2025-04-24 16:58:57,543 - INFO: Public photos processed: 7
+2025-04-24 16:58:57,543 - INFO: Database created at: data\metadata\memories.db
+2025-04-24 17:03:18,643 - INFO: Processing user photos...
+2025-04-24 17:03:18,647 - INFO: Found 5 images in data\raw\user_photos
+2025-04-24 17:03:28,703 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:03:28,705 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2727.JPEG: 5 keywords, description length: 615
+2025-04-24 17:03:34,829 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:03:34,832 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2729.JPEG: 4 keywords, description length: 421
+2025-04-24 17:03:41,745 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:03:41,747 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2736.JPEG: 5 keywords, description length: 455
+2025-04-24 17:03:49,874 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:03:49,875 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4732.JPEG: 5 keywords, description length: 535
+2025-04-24 17:03:58,725 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:03:58,727 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4927.JPEG: 4 keywords, description length: 528
+2025-04-24 17:03:58,732 - INFO: Processing public photos...
+2025-04-24 17:03:58,736 - INFO: Found 7 images in data\raw\public_photos
+2025-04-24 17:04:04,314 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:04:04,316 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_20663741.jpg: 5 keywords, description length: 421
+2025-04-24 17:04:09,134 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:04:09,136 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_26967351.jpg: 4 keywords, description length: 359
+2025-04-24 17:04:16,154 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:04:16,157 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_27036758.jpg: 5 keywords, description length: 529
+2025-04-24 17:04:21,366 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:04:21,370 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665731.jpg: 4 keywords, description length: 382
+2025-04-24 17:04:25,293 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:04:25,295 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665734.jpg: 5 keywords, description length: 409
+2025-04-24 17:04:29,615 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:04:29,619 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31700692.jpg: 5 keywords, description length: 526
+2025-04-24 17:04:36,034 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:04:36,038 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31738005.jpg: 5 keywords, description length: 495
+2025-04-24 17:04:36,045 - INFO: Creating SQLite database...
+2025-04-24 17:04:36,074 - INFO: User photos processed: 5
+2025-04-24 17:04:36,075 - INFO: Public photos processed: 7
+2025-04-24 17:04:36,076 - INFO: Database created at: data\metadata\memories.db
+2025-04-24 17:08:31,746 - INFO: Processing user photos...
+2025-04-24 17:08:31,751 - INFO: Found 5 images in data\raw\user_photos
+2025-04-24 17:08:41,547 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:08:41,552 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2727.JPEG: 5 keywords, description length: 549
+2025-04-24 17:08:50,679 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:08:50,680 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2729.JPEG: 4 keywords, description length: 452
+2025-04-24 17:09:01,182 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:01,184 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2736.JPEG: 5 keywords, description length: 475
+2025-04-24 17:09:07,489 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:07,495 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4732.JPEG: 5 keywords, description length: 424
+2025-04-24 17:09:14,745 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:14,747 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4927.JPEG: 5 keywords, description length: 472
+2025-04-24 17:09:14,751 - INFO: Processing public photos...
+2025-04-24 17:09:14,754 - INFO: Found 7 images in data\raw\public_photos
+2025-04-24 17:09:20,097 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:20,098 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_20663741.jpg: 5 keywords, description length: 443
+2025-04-24 17:09:25,833 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:25,834 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_26967351.jpg: 5 keywords, description length: 562
+2025-04-24 17:09:30,465 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:30,467 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_27036758.jpg: 5 keywords, description length: 595
+2025-04-24 17:09:35,933 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:35,939 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665731.jpg: 4 keywords, description length: 409
+2025-04-24 17:09:41,149 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:41,153 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665734.jpg: 5 keywords, description length: 545
+2025-04-24 17:09:46,505 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:46,511 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31700692.jpg: 5 keywords, description length: 474
+2025-04-24 17:09:56,069 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:09:56,072 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31738005.jpg: 5 keywords, description length: 530
+2025-04-24 17:09:56,075 - INFO: Creating SQLite database...
+2025-04-24 17:09:56,100 - INFO: User photos processed: 5
+2025-04-24 17:09:56,101 - INFO: Public photos processed: 7
+2025-04-24 17:09:56,101 - INFO: Database created at: data\metadata\memories.db
+2025-04-24 17:12:14,398 - INFO: Processing user photos...
+2025-04-24 17:12:14,415 - INFO: Found 100 images in data\raw\user_photos
+2025-04-24 17:12:28,496 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:12:28,498 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\86CDF64C-FACD-4DB3-A498-C686BD329555.jpg: 4 keywords, description length: 404
+2025-04-24 17:12:38,883 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:12:38,885 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0150.JPEG: 5 keywords, description length: 504
+2025-04-24 17:12:45,159 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:12:45,161 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0155.JPEG: 5 keywords, description length: 459
+2025-04-24 17:12:52,789 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:12:52,795 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0156.JPEG: 5 keywords, description length: 515
+2025-04-24 17:12:58,616 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:12:58,621 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0157.JPEG: 5 keywords, description length: 357
+2025-04-24 17:13:04,056 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:13:04,062 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0158.JPEG: 5 keywords, description length: 491
+2025-04-24 17:13:11,198 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:13:11,201 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0159.JPEG: 5 keywords, description length: 514
+2025-04-24 17:13:19,533 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:13:19,540 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0160.JPEG: 5 keywords, description length: 578
+2025-04-24 17:13:25,349 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:13:25,355 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0161.JPEG: 5 keywords, description length: 455
+2025-04-24 17:13:32,735 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:13:32,737 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0162.JPEG: 5 keywords, description length: 511
+2025-04-24 17:13:41,583 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:13:41,585 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0166.JPEG: 5 keywords, description length: 482
+2025-04-24 17:13:54,002 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:13:54,005 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0171.JPEG: 5 keywords, description length: 511
+2025-04-24 17:14:02,146 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:02,148 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0172.JPEG: 5 keywords, description length: 473
+2025-04-24 17:14:08,379 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:08,382 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0173.JPEG: 4 keywords, description length: 409
+2025-04-24 17:14:17,476 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:17,477 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0175.JPEG: 4 keywords, description length: 544
+2025-04-24 17:14:23,305 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:23,307 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0176.JPEG: 5 keywords, description length: 512
+2025-04-24 17:14:30,107 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:30,110 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0177.JPEG: 5 keywords, description length: 504
+2025-04-24 17:14:37,563 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:37,565 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0180.JPEG: 5 keywords, description length: 532
+2025-04-24 17:14:43,470 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:43,472 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0233.JPEG: 4 keywords, description length: 449
+2025-04-24 17:14:49,569 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:49,570 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0234.JPEG: 5 keywords, description length: 423
+2025-04-24 17:14:59,621 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:14:59,622 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0306.JPEG: 5 keywords, description length: 570
+2025-04-24 17:15:06,206 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:06,209 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0307.JPEG: 5 keywords, description length: 531
+2025-04-24 17:15:11,814 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:11,820 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0504.JPEG: 5 keywords, description length: 426
+2025-04-24 17:15:18,611 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:18,613 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0739.JPEG: 3 keywords, description length: 375
+2025-04-24 17:15:25,222 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:25,227 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0744.JPEG: 5 keywords, description length: 467
+2025-04-24 17:15:32,347 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:32,349 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0752.JPEG: 5 keywords, description length: 475
+2025-04-24 17:15:42,158 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:42,160 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0829.JPEG: 5 keywords, description length: 635
+2025-04-24 17:15:49,251 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:49,255 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0830.JPEG: 5 keywords, description length: 572
+2025-04-24 17:15:57,185 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:15:57,190 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0836.JPEG: 4 keywords, description length: 526
+2025-04-24 17:16:03,838 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:03,839 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0837.JPEG: 5 keywords, description length: 648
+2025-04-24 17:16:10,068 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:10,069 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0838.JPEG: 5 keywords, description length: 504
+2025-04-24 17:16:17,654 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:17,656 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0839.JPEG: 5 keywords, description length: 492
+2025-04-24 17:16:24,534 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:24,534 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0893.JPEG: 3 keywords, description length: 579
+2025-04-24 17:16:29,953 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:29,955 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0895.JPEG: 5 keywords, description length: 588
+2025-04-24 17:16:35,593 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:35,598 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0900.JPEG: 4 keywords, description length: 545
+2025-04-24 17:16:42,387 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:42,393 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0901.JPEG: 4 keywords, description length: 413
+2025-04-24 17:16:47,017 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:47,020 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0919.JPEG: 5 keywords, description length: 456
+2025-04-24 17:16:54,606 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:16:54,612 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0920.JPEG: 5 keywords, description length: 418
+2025-04-24 17:17:01,070 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:01,072 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0934.JPEG: 5 keywords, description length: 564
+2025-04-24 17:17:09,236 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:09,238 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_0939.JPEG: 4 keywords, description length: 414
+2025-04-24 17:17:14,529 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:14,534 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1030.JPEG: 4 keywords, description length: 349
+2025-04-24 17:17:20,678 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:20,683 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1031.JPG: 4 keywords, description length: 493
+2025-04-24 17:17:33,478 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:33,480 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1032.JPG: 4 keywords, description length: 405
+2025-04-24 17:17:40,028 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:40,029 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1033.JPEG: 5 keywords, description length: 474
+2025-04-24 17:17:46,611 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:46,618 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1034.JPEG: 5 keywords, description length: 413
+2025-04-24 17:17:52,806 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:52,810 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1035.JPEG: 5 keywords, description length: 502
+2025-04-24 17:17:59,430 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:17:59,432 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1036.JPEG: 5 keywords, description length: 570
+2025-04-24 17:18:03,549 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:03,555 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1042.JPEG: 5 keywords, description length: 368
+2025-04-24 17:18:08,285 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:08,288 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1043.JPEG: 5 keywords, description length: 435
+2025-04-24 17:18:15,397 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:15,399 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1044.JPEG: 4 keywords, description length: 339
+2025-04-24 17:18:18,687 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 502 Bad Gateway"
+2025-04-24 17:18:18,688 - INFO: Retrying request to /chat/completions in 0.902741 seconds
+2025-04-24 17:18:24,689 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:24,691 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1045.JPEG: 5 keywords, description length: 482
+2025-04-24 17:18:29,947 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:29,948 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1046.JPEG: 5 keywords, description length: 386
+2025-04-24 17:18:36,096 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:36,098 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1047.JPEG: 4 keywords, description length: 431
+2025-04-24 17:18:45,663 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:45,668 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1048.JPEG: 4 keywords, description length: 386
+2025-04-24 17:18:52,881 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:18:52,882 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1055.JPEG: 5 keywords, description length: 470
+2025-04-24 17:19:01,562 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:01,564 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1057.JPEG: 5 keywords, description length: 469
+2025-04-24 17:19:07,553 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:07,554 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1058.JPEG: 5 keywords, description length: 489
+2025-04-24 17:19:15,491 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:15,493 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1059.JPEG: 5 keywords, description length: 450
+2025-04-24 17:19:21,942 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:21,943 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1060.JPEG: 4 keywords, description length: 406
+2025-04-24 17:19:27,681 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:27,688 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1062.JPEG: 5 keywords, description length: 483
+2025-04-24 17:19:34,263 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:34,264 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1066.JPEG: 4 keywords, description length: 438
+2025-04-24 17:19:41,856 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:41,860 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1067.JPEG: 4 keywords, description length: 468
+2025-04-24 17:19:48,729 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:48,730 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1074.JPEG: 4 keywords, description length: 495
+2025-04-24 17:19:54,528 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:54,530 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1075.JPEG: 5 keywords, description length: 380
+2025-04-24 17:19:59,360 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:19:59,363 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1076.JPEG: 4 keywords, description length: 433
+2025-04-24 17:20:06,011 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:20:06,014 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1131.JPG: 4 keywords, description length: 419
+2025-04-24 17:20:12,440 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:20:12,442 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1132.JPEG: 5 keywords, description length: 470
+2025-04-24 17:20:19,265 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:20:19,267 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1133.JPEG: 5 keywords, description length: 528
+2025-04-24 17:20:27,116 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:20:27,117 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1134.JPEG: 5 keywords, description length: 548
+2025-04-24 17:20:33,138 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:20:33,140 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1135.JPEG: 5 keywords, description length: 477
+2025-04-24 17:20:40,587 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:20:40,589 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1136.JPEG: 5 keywords, description length: 594
+2025-04-24 17:20:49,782 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:20:49,786 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1137.JPEG: 4 keywords, description length: 501
+2025-04-24 17:21:00,028 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:00,030 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1138.JPEG: 5 keywords, description length: 435
+2025-04-24 17:21:04,846 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:04,847 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1142.JPEG: 5 keywords, description length: 474
+2025-04-24 17:21:12,921 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:12,925 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1143.JPEG: 5 keywords, description length: 480
+2025-04-24 17:21:20,035 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:20,036 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1144.JPEG: 5 keywords, description length: 520
+2025-04-24 17:21:28,187 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:28,191 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1145.JPEG: 5 keywords, description length: 506
+2025-04-24 17:21:37,059 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:37,060 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1146.JPEG: 5 keywords, description length: 591
+2025-04-24 17:21:45,612 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:45,613 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1147.JPEG: 5 keywords, description length: 440
+2025-04-24 17:21:51,431 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:51,439 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1148.JPEG: 4 keywords, description length: 393
+2025-04-24 17:21:57,983 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:21:57,985 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1150.JPEG: 4 keywords, description length: 437
+2025-04-24 17:22:06,536 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:06,538 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1152.JPEG: 4 keywords, description length: 509
+2025-04-24 17:22:13,052 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:13,053 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1418.JPEG: 4 keywords, description length: 502
+2025-04-24 17:22:19,427 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:19,429 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1419.JPEG: 5 keywords, description length: 563
+2025-04-24 17:22:26,266 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:26,269 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1435.JPEG: 5 keywords, description length: 565
+2025-04-24 17:22:31,396 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:31,398 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1436.JPEG: 4 keywords, description length: 521
+2025-04-24 17:22:39,595 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:39,598 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1521.JPEG: 5 keywords, description length: 641
+2025-04-24 17:22:47,376 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:47,377 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1522.JPEG: 5 keywords, description length: 506
+2025-04-24 17:22:56,518 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:22:56,521 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1525.JPEG: 5 keywords, description length: 462
+2025-04-24 17:23:04,547 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:04,550 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_1527.JPEG: 5 keywords, description length: 626
+2025-04-24 17:23:11,025 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:11,030 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2688.JPEG: 5 keywords, description length: 519
+2025-04-24 17:23:17,673 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:17,675 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2722.JPEG: 5 keywords, description length: 470
+2025-04-24 17:23:26,180 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:26,181 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2723.JPEG: 5 keywords, description length: 548
+2025-04-24 17:23:36,053 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:36,056 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2725.jpg: 5 keywords, description length: 435
+2025-04-24 17:23:41,903 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:41,905 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2726.JPEG: 5 keywords, description length: 526
+2025-04-24 17:23:50,146 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:50,151 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2727.JPEG: 5 keywords, description length: 467
+2025-04-24 17:23:56,948 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:23:56,954 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2729.JPEG: 5 keywords, description length: 411
+2025-04-24 17:24:02,512 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:02,515 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_2736.JPEG: 5 keywords, description length: 449
+2025-04-24 17:24:09,894 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:09,896 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4732.JPEG: 5 keywords, description length: 493
+2025-04-24 17:24:16,919 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:16,920 - INFO: Successfully analyzed data\raw\user_photos\Kuala Lumpur\IMG_4927.JPEG: 5 keywords, description length: 516
+2025-04-24 17:24:16,929 - INFO: Processing public photos...
+2025-04-24 17:24:16,945 - INFO: Found 100 images in data\raw\public_photos
+2025-04-24 17:24:22,250 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:22,251 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_10026143.jpg: 5 keywords, description length: 421
+2025-04-24 17:24:27,530 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:27,533 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1044329.jpg: 5 keywords, description length: 477
+2025-04-24 17:24:33,539 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:33,541 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1044341.jpg: 5 keywords, description length: 521
+2025-04-24 17:24:39,187 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:39,189 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1050708.jpg: 5 keywords, description length: 545
+2025-04-24 17:24:45,027 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:45,029 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1123974.jpg: 5 keywords, description length: 401
+2025-04-24 17:24:50,496 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:50,500 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1137388.jpg: 5 keywords, description length: 542
+2025-04-24 17:24:56,587 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:24:56,589 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1173770.jpg: 5 keywords, description length: 448
+2025-04-24 17:25:02,296 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:02,298 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_122244.jpg: 5 keywords, description length: 449
+2025-04-24 17:25:08,004 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:08,007 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1324500.jpg: 5 keywords, description length: 464
+2025-04-24 17:25:13,202 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:13,204 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1331848.jpg: 4 keywords, description length: 460
+2025-04-24 17:25:18,103 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:18,110 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_14709336.jpg: 5 keywords, description length: 457
+2025-04-24 17:25:23,533 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:23,534 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_14709378.jpg: 5 keywords, description length: 593
+2025-04-24 17:25:30,269 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:30,270 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1486579.jpg: 5 keywords, description length: 478
+2025-04-24 17:25:36,340 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:36,341 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1519324.jpg: 5 keywords, description length: 445
+2025-04-24 17:25:42,694 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:42,695 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1538177.jpg: 5 keywords, description length: 632
+2025-04-24 17:25:48,186 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:48,187 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_1580112.jpg: 5 keywords, description length: 416
+2025-04-24 17:25:52,625 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:52,627 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_18096357.jpg: 5 keywords, description length: 427
+2025-04-24 17:25:57,565 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:25:57,566 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_18787532.jpg: 4 keywords, description length: 620
+2025-04-24 17:26:03,319 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:03,320 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_190417.jpg: 5 keywords, description length: 502
+2025-04-24 17:26:08,645 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:08,646 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_190482.jpg: 5 keywords, description length: 411
+2025-04-24 17:26:14,736 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:14,737 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_19348543.jpg: 5 keywords, description length: 544
+2025-04-24 17:26:19,331 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:19,333 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_19348545.jpg: 5 keywords, description length: 513
+2025-04-24 17:26:23,908 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:23,910 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_20663741.jpg: 4 keywords, description length: 329
+2025-04-24 17:26:30,408 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:30,411 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2093089.jpg: 5 keywords, description length: 533
+2025-04-24 17:26:35,554 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:35,555 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2097603.jpg: 4 keywords, description length: 417
+2025-04-24 17:26:40,004 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:40,006 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2177744.jpg: 4 keywords, description length: 423
+2025-04-24 17:26:45,339 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:45,341 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2229894.jpg: 5 keywords, description length: 453
+2025-04-24 17:26:49,914 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:49,916 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_22794.jpg: 5 keywords, description length: 469
+2025-04-24 17:26:55,948 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:26:55,951 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_22804.jpg: 5 keywords, description length: 480
+2025-04-24 17:27:00,013 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:00,015 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2389371.jpg: 5 keywords, description length: 451
+2025-04-24 17:27:07,372 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:07,374 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2389473.jpg: 5 keywords, description length: 495
+2025-04-24 17:27:12,460 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:12,463 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2449510.jpg: 4 keywords, description length: 442
+2025-04-24 17:27:16,625 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:16,628 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2473937.jpg: 4 keywords, description length: 498
+2025-04-24 17:27:22,362 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:22,364 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_26967351.jpg: 5 keywords, description length: 491
+2025-04-24 17:27:26,878 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:26,880 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_27036758.jpg: 5 keywords, description length: 532
+2025-04-24 17:27:32,583 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:32,586 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2716060.jpg: 5 keywords, description length: 480
+2025-04-24 17:27:38,062 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:38,065 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2728870.jpg: 5 keywords, description length: 432
+2025-04-24 17:27:43,259 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:43,261 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2729643.jpg: 5 keywords, description length: 421
+2025-04-24 17:27:48,268 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:48,269 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2734964.jpg: 5 keywords, description length: 359
+2025-04-24 17:27:53,920 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:53,925 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2735414.jpg: 4 keywords, description length: 498
+2025-04-24 17:27:58,908 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:27:58,910 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2740936.jpg: 5 keywords, description length: 516
+2025-04-24 17:28:03,888 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:03,890 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2740965.jpg: 4 keywords, description length: 389
+2025-04-24 17:28:08,396 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:08,397 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2741626.jpg: 5 keywords, description length: 430
+2025-04-24 17:28:14,596 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:14,598 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2741627.jpg: 5 keywords, description length: 516
+2025-04-24 17:28:18,887 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:18,888 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2741701.jpg: 4 keywords, description length: 433
+2025-04-24 17:28:24,479 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:24,484 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2748123.jpg: 5 keywords, description length: 506
+2025-04-24 17:28:30,287 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:30,290 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2748126.jpg: 5 keywords, description length: 378
+2025-04-24 17:28:36,857 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:36,861 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2748129.jpg: 5 keywords, description length: 387
+2025-04-24 17:28:43,927 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:43,928 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2749012.jpg: 4 keywords, description length: 456
+2025-04-24 17:28:49,033 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:49,035 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2751026.jpg: 5 keywords, description length: 538
+2025-04-24 17:28:55,724 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:28:55,729 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2751061.jpg: 4 keywords, description length: 409
+2025-04-24 17:29:03,836 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:03,838 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2752085.jpg: 5 keywords, description length: 473
+2025-04-24 17:29:08,849 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:08,851 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2752199.jpg: 5 keywords, description length: 496
+2025-04-24 17:29:14,010 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:14,013 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2753641.jpg: 4 keywords, description length: 387
+2025-04-24 17:29:18,074 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:18,076 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2756875.jpg: 5 keywords, description length: 403
+2025-04-24 17:29:23,951 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:23,951 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2859016.jpg: 5 keywords, description length: 535
+2025-04-24 17:29:29,675 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:29,677 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2863546.jpg: 5 keywords, description length: 613
+2025-04-24 17:29:34,859 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:34,861 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_2863547.jpg: 5 keywords, description length: 441
+2025-04-24 17:29:40,671 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:40,674 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3015688.jpg: 5 keywords, description length: 477
+2025-04-24 17:29:46,762 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:46,764 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_303148.jpg: 5 keywords, description length: 377
+2025-04-24 17:29:50,987 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:50,989 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_303159.jpg: 5 keywords, description length: 396
+2025-04-24 17:29:56,263 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:29:56,264 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3050018.jpg: 5 keywords, description length: 397
+2025-04-24 17:30:01,403 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:01,407 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_313032.jpg: 5 keywords, description length: 491
+2025-04-24 17:30:08,687 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:08,692 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665731.jpg: 5 keywords, description length: 526
+2025-04-24 17:30:13,944 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:13,949 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31665734.jpg: 5 keywords, description length: 461
+2025-04-24 17:30:18,348 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:18,349 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31700692.jpg: 5 keywords, description length: 455
+2025-04-24 17:30:22,354 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:22,355 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_31738005.jpg: 5 keywords, description length: 437
+2025-04-24 17:30:28,381 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:28,383 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3328598.jpg: 5 keywords, description length: 363
+2025-04-24 17:30:33,756 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:33,761 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3328616.jpg: 5 keywords, description length: 464
+2025-04-24 17:30:40,109 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:40,113 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_354777.jpg: 5 keywords, description length: 460
+2025-04-24 17:30:45,399 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:45,401 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3724019.jpg: 5 keywords, description length: 446
+2025-04-24 17:30:49,636 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:49,637 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3751315.jpg: 5 keywords, description length: 440
+2025-04-24 17:30:54,425 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:54,426 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3795937.jpg: 5 keywords, description length: 386
+2025-04-24 17:30:59,411 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:30:59,413 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3797643.jpg: 5 keywords, description length: 512
+2025-04-24 17:31:03,015 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:03,021 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3805975.jpg: 4 keywords, description length: 395
+2025-04-24 17:31:08,549 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:08,554 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3810243.jpg: 5 keywords, description length: 475
+2025-04-24 17:31:13,508 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:13,510 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3815533.jpg: 5 keywords, description length: 585
+2025-04-24 17:31:18,073 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:18,074 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_3914693.jpg: 5 keywords, description length: 450
+2025-04-24 17:31:22,212 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:22,213 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_391498.jpg: 5 keywords, description length: 438
+2025-04-24 17:31:28,518 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:28,520 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_433942.jpg: 5 keywords, description length: 470
+2025-04-24 17:31:34,139 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:34,141 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_433989.jpg: 5 keywords, description length: 468
+2025-04-24 17:31:39,734 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:39,735 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_4436349.jpg: 5 keywords, description length: 560
+2025-04-24 17:31:44,334 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:44,336 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_4683857.jpg: 5 keywords, description length: 454
+2025-04-24 17:31:50,803 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:50,807 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_4847105.jpg: 5 keywords, description length: 580
+2025-04-24 17:31:56,741 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:31:56,743 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_53436.jpg: 5 keywords, description length: 397
+2025-04-24 17:32:02,496 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:02,498 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_6016634.jpg: 4 keywords, description length: 477
+2025-04-24 17:32:07,265 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:07,268 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_6016674.jpg: 5 keywords, description length: 527
+2025-04-24 17:32:13,621 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:13,623 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_6016676.jpg: 5 keywords, description length: 496
+2025-04-24 17:32:17,753 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:17,755 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_6016684.jpg: 5 keywords, description length: 505
+2025-04-24 17:32:22,495 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:22,497 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_6016702.jpg: 5 keywords, description length: 454
+2025-04-24 17:32:27,725 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:27,727 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_67559.jpg: 5 keywords, description length: 448
+2025-04-24 17:32:31,131 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:31,133 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_777079.jpg: 5 keywords, description length: 457
+2025-04-24 17:32:36,451 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:36,455 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_862938.jpg: 5 keywords, description length: 450
+2025-04-24 17:32:42,595 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:42,599 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_880929.jpg: 5 keywords, description length: 493
+2025-04-24 17:32:46,841 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:46,842 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_88214.jpg: 4 keywords, description length: 432
+2025-04-24 17:32:51,453 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:51,456 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_904346.jpg: 4 keywords, description length: 420
+2025-04-24 17:32:55,617 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:32:55,619 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_908024.jpg: 4 keywords, description length: 433
+2025-04-24 17:33:04,534 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:33:04,535 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_92225.jpg: 5 keywords, description length: 625
+2025-04-24 17:33:10,300 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:33:10,305 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_93750.jpg: 4 keywords, description length: 496
+2025-04-24 17:33:18,434 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 17:33:18,436 - INFO: Successfully analyzed data\raw\public_photos\Kuala Lumpur\pexels_94420.jpg: 4 keywords, description length: 466
+2025-04-24 17:33:18,446 - INFO: Creating SQLite database...
+2025-04-24 17:33:18,497 - INFO: User photos processed: 100
+2025-04-24 17:33:18,498 - INFO: Public photos processed: 100
+2025-04-24 17:33:18,498 - INFO: Database created at: data\metadata\memories.db

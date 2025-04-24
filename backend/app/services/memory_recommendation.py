@@ -94,7 +94,7 @@ class MemoryRecommendationEngine:
                 
         return selected_memories
     
-    def sort_memories_by_recency(self, memories, max_memories=10):
+    def sort_memories_by_recency(self, memories, max_memories=30):
         """Sort memories by date (most recent first)."""
         if not memories:
             return []

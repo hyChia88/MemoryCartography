@@ -31,7 +31,7 @@ const MemoryApp: React.FC = () => {
 
   const api = axios.create({
     baseURL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000',
-    timeout: 5000,
+    timeout: 15000,
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -165,23 +165,24 @@ const MemoryApp: React.FC = () => {
   };
 
   // For left-click (decrease weight)
-  const handleDecreaseWeight = async (memory_id: number) => {
+  const handleDecreaseWeight = async (memory_id: number, event: React.MouseEvent) => { // Added event parameter
+    event.preventDefault(); // <--- ADD THIS LINE to prevent the context menu
     try {
       const response = await api.post(`/memories/${memory_id}/decrease_weight`);
-      
+  
       // Update the memory weight in the local state
       setMemories(prevMemories => {
         // First update the weight of the changed memory
-        const updatedMemories = prevMemories.map(memory => 
-          memory.id === memory_id 
-            ? { ...memory, weight: response.data.new_weight } 
+        const updatedMemories = prevMemories.map(memory =>
+          memory.id === memory_id
+            ? { ...memory, weight: response.data.new_weight }
             : memory
         );
-        
+  
         // Then re-sort the memories based on current sort option
         return sortMemories(updatedMemories, sortBy);
       });
-      
+  
       console.log(`Decreased weight of memory ${memory_id} to ${response.data.new_weight}`);
     } catch (error) {
       console.error('Error decreasing memory weight:', error);
@@ -359,8 +360,9 @@ const MemoryApp: React.FC = () => {
             <div
               key={memory.id}
               className="bg-white border rounded overflow-hidden hover:shadow-lg transition-shadow relative"
-              onContextMenu={() => handleDecreaseWeight(memory.id)}
-              onClick={(e) => handleIncreaseWeight(memory.id, e)}
+              // Pass the event 'e' to handleDecreaseWeight
+              onContextMenu={(e) => handleDecreaseWeight(memory.id, e)}
+              onClick={(e) => handleIncreaseWeight(memory.id, e)} // This already prevents default left-click actions
             >
               {/* Image Thumbnail */}
               <div className="w-full h-40 bg-gray-200 relative overflow-hidden">

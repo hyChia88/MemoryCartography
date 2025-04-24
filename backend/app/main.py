@@ -149,7 +149,7 @@ def read_root():
 def search_memories_endpoint(
     query: str,
     memory_type: str = 'user',
-    limit: int = 10,
+    limit: int = 30,
     sort_by: str = "weight", # Add sort parameter
     db_path=DB_PATH
     ):
@@ -335,7 +335,7 @@ def generate_narrative_endpoint(
     query: str, 
     memory_type: str = 'user',
     use_embedding: bool = True,
-    max_memories: int = 10,
+    max_memories: int = 30,
     prioritize_weights: bool = True
 ):
     """

@@ -31,14 +31,14 @@ def init_db(db_path):
     conn.commit()
     conn.close()
 
-def search_memories(query, memory_type='user', limit=10, db_path='memories.db'):
+def search_memories(query, memory_type='user', limit=30, db_path='memories.db'):
     """
     Search memories by query with robust error handling and flexible searching.
     
     Args:
         query (str): Search term to find memories
         memory_type (str, optional): Type of memories to search. Defaults to 'user'.
-        limit (int, optional): Maximum number of memories to return. Defaults to 10.
+        limit (int, optional): Maximum number of memories to return. Defaults to 30.
         db_path (str, optional): Path to the SQLite database. Defaults to 'memories.db'.
     
     Returns:
@@ -104,7 +104,7 @@ def search_memories(query, memory_type='user', limit=10, db_path='memories.db'):
 
 # This function should be added to database.py
 
-def search_memories_with_embeddings(query, memory_type='user', limit=10, db_path='memories.db'):
+def search_memories_with_embeddings(query, memory_type='user', limit=30, db_path='memories.db'):
     """
     Search memories using both keyword matching and embedding similarity.
     
