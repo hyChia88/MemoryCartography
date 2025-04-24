@@ -62,11 +62,10 @@ class DataProcessor:
                 path for path in source_dir.rglob(f'*{ext.upper()}') 
                 if path.is_file() and not path.name.startswith('.')
             ])
-        
         return sorted(set(image_paths))
-
+    
     def extract_image_metadata(self, image_path):
-        """Extract comprehensive metadata from an image."""
+        """Extract comprehensive metadata from an image, including location."""
         try:
             # Read EXIF data using PIL
             img = Image.open(image_path)
@@ -80,14 +79,84 @@ class DataProcessor:
             
             # Default values
             location = "Unknown Location"
+            coordinates = "0.0, 0.0"
             date = datetime.now().strftime('%Y-%m-%d')
             
-            # Extract location from parent folder if possible
-            parent_folder = image_path.parent.name
-            if parent_folder and parent_folder != image_path.parent.parent.name:
-                location = parent_folder.replace('_', ' ')
+            # Extract GPS coordinates from EXIF
+            if 'GPSInfo' in exif_data:
+                try:
+                    gps_info = exif_data['GPSInfo']
+                    
+                    def convert_to_degrees(coordinate):
+                        """Convert GPS coordinates from DMS to decimal degrees."""
+                        degrees = coordinate[0]
+                        minutes = coordinate[1]
+                        seconds = coordinate[2]
+                        return degrees + (minutes / 60.0) + (seconds / 3600.0)
+                    
+                    # Check for latitude and longitude
+                    if 2 in gps_info and 4 in gps_info:
+                        lat = convert_to_degrees(gps_info[2])
+                        lat_ref = gps_info.get(1, 'N')
+                        lon = convert_to_degrees(gps_info[4])
+                        lon_ref = gps_info.get(3, 'E')
+                        
+                        # Adjust sign based on reference
+                        if lat_ref == 'S':
+                            lat = -lat
+                        if lon_ref == 'W':
+                            lon = -lon
+                        
+                        # Store coordinates
+                        coordinates = f"{lat:.6f}, {lon:.6f}"
+                        
+                        # Use geocoder to get detailed location
+                        try:
+                            location_info = self.geolocator.reverse(f"{lat}, {lon}")
+                            if location_info:
+                                address = location_info.raw.get('address', {})
+                                
+                                # Prioritize specific location details
+                                location_parts = []
+                                
+                                # Preferred order of location details
+                                priority_keys = [
+                                    'neighbourhood', 'suburb', 'city_district', 
+                                    'city', 'town', 'county', 'state'
+                                ]
+                                
+                                for key in priority_keys:
+                                    if key in address:
+                                        location_parts.append(address[key])
+                                
+                                # Combine location parts
+                                if location_parts:
+                                    location = ', '.join(location_parts)
+                                else:
+                                    location = f"Location near {lat:.4f}, {lon:.4f}"
+                        
+                        except Exception as geo_err:
+                            logging.warning(f"Geocoding failed: {geo_err}")
+                            location = f"Location near {coordinates}"
+                
+                except Exception as gps_err:
+                    logging.warning(f"GPS coordinate extraction failed: {gps_err}")
             
-            # Try to extract date from EXIF
+            # If location is still unknown, use folder name
+            if location == "Unknown Location":
+                try:
+                    # Get parent folder name and clean it up
+                    folder_name = image_path.parent.name
+                    
+                    # Remove common prefixes and clean up the name
+                    folder_name = folder_name.replace('_', ' ').replace('-', ' ').title()
+                    
+                    # Use the cleaned folder name as location
+                    location = folder_name
+                except Exception as folder_err:
+                    logging.warning(f"Folder name extraction failed: {folder_err}")
+            
+            # Date extraction
             date_tags = ['DateTimeOriginal', 'DateTime', 'DateTimeDigitized']
             for tag in date_tags:
                 if tag in exif_data:
@@ -104,7 +173,8 @@ class DataProcessor:
         except Exception as e:
             logging.error(f"Error extracting metadata for {image_path}: {e}")
             return "Unknown Location", datetime.now().strftime('%Y-%m-%d')
-
+        
+    
     def analyze_image_emotional_intensity(self, image_path):
         """Analyze image's emotional intensity using OpenAI."""
         if not self.client:

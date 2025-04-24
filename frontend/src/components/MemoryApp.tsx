@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DOMPurify from 'dompurify';
+import ResetWeightsButton from './ResetWeightsButton';
 
 interface Memory {
   id: number;
@@ -26,6 +27,7 @@ const MemoryApp: React.FC = () => {
   const [memoryType, setMemoryType] = useState<'user' | 'public'>('user');
   const [highlightedKeywords, setHighlightedKeywords] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>('weight');
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   const api = axios.create({
     baseURL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000',
@@ -196,6 +198,26 @@ const MemoryApp: React.FC = () => {
     }
   };
 
+  const handleResetComplete = (data) => {
+    // Set a temporary success message
+    if (data.status === 'success') {
+      setResetMessage(`Reset ${data.updated_count} memories successfully!`);
+      
+      // Clear the message after 3 seconds
+      setTimeout(() => {
+        setResetMessage(null);
+      }, 3000);
+      
+      // If we have current search results, refresh them
+      if (searchTerm && memories.length > 0) {
+        searchMemories();
+      }
+    } else {
+      setError(data.message || 'Failed to reset weights');
+    }
+  };
+
+
   return (
     <div className="bg-white min-h-screen p-4">
       <div className="container mx-auto max-w-4xl">
@@ -226,33 +248,57 @@ const MemoryApp: React.FC = () => {
             </button>
           </div>
         </div>
-  
-        {/* Search Bar */}
-        <div className="mb-4 flex">
+        
+        {/* Search Bar and Reset Button*/}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={`Search ${memoryType} memories...`}
-            className="flex-grow p-2 border rounded-l bg-white text-gray-800"
+            className="flex-grow p-2 border rounded bg-white text-gray-800"
             onKeyPress={(e) => e.key === 'Enter' && searchMemories()}
           />
-          <button
-            onClick={searchMemories}
-            disabled={loading}
-            className="bg-gray-200 text-gray-800 p-2 rounded-r disabled:opacity-50"
-          >
-            {loading ? 'Searching...' : 'Search'}
-          </button>
-          <button
-            onClick={generateNarrative}
-            disabled={loading}
-            className="bg-gray-400 text-gray-800 p-2 ml-2 rounded disabled:opacity-50"
-          >
-            {loading ? 'Generating...' : 'Generate Narrative'}
-          </button>
+          
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={searchMemories}
+              disabled={loading}
+              className="bg-gray-200 text-gray-800 p-2 rounded disabled:opacity-50"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+            
+            <button
+              onClick={generateNarrative}
+              disabled={loading}
+              className="bg-gray-400 text-gray-800 p-2 rounded disabled:opacity-50"
+            >
+              {loading ? 'Generating...' : 'Generate Narrative'}
+            </button>
+            
+            {/* Add Reset Weights Button */}
+            <ResetWeightsButton 
+              memoryType={memoryType}
+              onResetComplete={handleResetComplete}
+            />
+          </div>
         </div>
         
+        {/* Reset Success Message */}
+        {resetMessage && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded mb-4 text-sm">
+            {resetMessage}
+          </div>
+        )}
+        
+        {/* Error Handling */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+  
         {/* Sort Options */}
         <div className="mb-4 flex justify-center">
           {/* <div className="bg-gray-100 rounded-full p-1 flex">

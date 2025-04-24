@@ -373,7 +373,6 @@ def generate_narrative_endpoint(
         
         # Always include the highest weighted memory
         if weight_sorted_memories:
-            print("weight_sorted_memories exits")
             top_memory = weight_sorted_memories[0]
             selected_memories.append(top_memory)
             current_total += float(top_memory.get('weight', 1.0))
@@ -390,7 +389,6 @@ def generate_narrative_endpoint(
                 selected_memories.append(memory)
                 current_total += memory_weight
 
-        # how to debug print to check how many sel memo
         # Ensure we have at least 2 memories if available (for more interesting narratives)
         if len(selected_memories) < 2 and len(weight_sorted_memories) >= 2:
             if len(selected_memories) == 0:
@@ -584,3 +582,153 @@ def get_memory_clusters(
             "clusters": [memories],
             "cluster_keywords": [["all", "memories"]]
         }
+        
+@app.post("/memories/reset_weights_from_json", response_model=dict)
+async def reset_weights_from_json(
+    memory_type: str = Query("all", description="Type of memories to reset: 'user', 'public', or 'all'")
+):
+    """
+    Reset memory weights to their original values from JSON metadata files.
+    
+    Args:
+        memory_type: Type of memories to reset weights for ('user', 'public', or 'all')
+        
+    Returns:
+        A dictionary with the count of updated memories and status message
+    """
+    try:
+        # Define paths to the metadata files
+        user_metadata_path = os.path.join(os.path.dirname(DB_PATH), "user_metadata.json")
+        public_metadata_path = os.path.join(os.path.dirname(DB_PATH), "public_metadata.json")
+        
+        # Initialize counters and memory maps
+        updated_count = 0
+        memory_id_to_weight = {}
+        processed_files = []
+        
+        # Load user metadata if needed
+        if memory_type.lower() in ["user", "all"] and os.path.exists(user_metadata_path):
+            try:
+                with open(user_metadata_path, 'r', encoding='utf-8') as f:
+                    user_metadata = json.load(f)
+                    
+                    # Extract filename and weights from the specific format
+                    for filename, memory_data in user_metadata.items():
+                        # Extract just the base filename without extension to match DB records
+                        base_filename = os.path.splitext(filename)[0]
+                        weight = memory_data.get('weight', 1.0)
+                        
+                        # Store the mapping for database update
+                        memory_id_to_weight[base_filename] = weight
+                    
+                processed_files.append(os.path.basename(user_metadata_path))
+                print(f"Loaded {len(memory_id_to_weight)} weights from user metadata")
+            except json.JSONDecodeError as e:
+                print(f"Error parsing user metadata JSON: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error parsing user metadata JSON: {str(e)}"
+                )
+        
+        # Load public metadata if needed
+        if memory_type.lower() in ["public", "all"] and os.path.exists(public_metadata_path):
+            try:
+                with open(public_metadata_path, 'r', encoding='utf-8') as f:
+                    public_metadata = json.load(f)
+                    
+                    # Extract filename and weights from the specific format
+                    initial_count = len(memory_id_to_weight)
+                    for filename, memory_data in public_metadata.items():
+                        # Extract just the base filename without extension to match DB records
+                        base_filename = os.path.splitext(filename)[0]
+                        weight = memory_data.get('weight', 1.0)
+                        
+                        # Store the mapping for database update
+                        memory_id_to_weight[base_filename] = weight
+                    
+                processed_files.append(os.path.basename(public_metadata_path))
+                print(f"Loaded {len(memory_id_to_weight) - initial_count} weights from public metadata")
+            except json.JSONDecodeError as e:
+                print(f"Error parsing public metadata JSON: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error parsing public metadata JSON: {str(e)}"
+                )
+        
+        # If no weights were found, return early
+        if not memory_id_to_weight:
+            return {
+                "status": "warning",
+                "message": f"No weights found in metadata files for type '{memory_type}'",
+                "updated_count": 0,
+                "processed_files": processed_files
+            }
+        
+        # Connect to the database to update weights
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # First, get a map of filenames to IDs from the database
+        if memory_type.lower() == "all":
+            cursor.execute("SELECT id, filename FROM memories")
+        else:
+            cursor.execute("SELECT id, filename FROM memories WHERE type = ?", (memory_type.lower(),))
+        
+        filename_to_id = {}
+        for row in cursor.fetchall():
+            memory_id, filename = row
+            if filename:
+                # Extract base filename without extension to match our metadata keys
+                base_filename = os.path.splitext(os.path.basename(filename))[0]
+                filename_to_id[base_filename] = memory_id
+        
+        # Now update weights based on filename matches
+        updated_weights = []
+        for base_filename, weight in memory_id_to_weight.items():
+            if base_filename in filename_to_id:
+                memory_id = filename_to_id[base_filename]
+                cursor.execute(
+                    "UPDATE memories SET weight = ? WHERE id = ?",
+                    (weight, memory_id)
+                )
+                if cursor.rowcount > 0:
+                    updated_weights.append((memory_id, weight))
+        
+        # Commit changes and get updated count
+        conn.commit()
+        updated_count = len(updated_weights)
+        
+        # Print detailed information for debugging
+        for memory_id, weight in updated_weights[:5]:  # Print first 5 for brevity
+            print(f"Updated memory ID {memory_id} with weight {weight}")
+        
+        if updated_count > 5:
+            print(f"... and {updated_count - 5} more memories")
+        
+        # Close the connection
+        conn.close()
+        
+        # Return success response
+        return {
+            "status": "success" if updated_count > 0 else "warning",
+            "message": f"Successfully reset weights for {updated_count} memories from metadata files" if updated_count > 0 else "No matching database records found for metadata entries",
+            "type": memory_type,
+            "updated_count": updated_count,
+            "processed_files": processed_files
+        }
+        
+    except sqlite3.Error as e:
+        # Log database errors
+        print(f"Database error while resetting weights: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+        
+    except Exception as e:
+        # Log unexpected errors
+        print(f"Unexpected error while resetting weights: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
