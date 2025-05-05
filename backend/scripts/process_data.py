@@ -380,11 +380,11 @@ class DataProcessor:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process images for Memory Cartography")
-    parser.add_argument("--raw-user", default="data/raw/user_photos", help="Directory with raw user photos")
-    parser.add_argument("--raw-public", default="data/raw/public_photos", help="Directory with raw public photos")
-    parser.add_argument("--processed-user", default="data/processed/user_photos", help="Output directory for processed user photos")
-    parser.add_argument("--processed-public", default="data/processed/public_photos", help="Output directory for processed public photos")
-    parser.add_argument("--metadata-dir", default="data/metadata", help="Directory for metadata files")
+    parser.add_argument("--raw-user", default="data/raw/user_photos_ext", help="Directory with raw user photos")
+    parser.add_argument("--raw-public", default="data/raw/public_photos_ext", help="Directory with raw public photos")
+    parser.add_argument("--processed-user", default="data/processed-ext/user_photos", help="Output directory for processed user photos")
+    parser.add_argument("--processed-public", default="data/processed-ext/public_photos", help="Output directory for processed public photos")
+    parser.add_argument("--metadata-dir", default="data/metadata-ext", help="Directory for metadata files")
 
     args = parser.parse_args()
 

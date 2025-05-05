@@ -307,7 +307,7 @@ const MemoryApp: React.FC = () => {
               onClick={() => handleSortChange('weight')}
               className={`px-3 py-1 text-sm rounded-full transition-colors ${
                 sortBy === 'weight'
-                  ? 'bg-yellow-400 text-gray-800'
+                  ? 'bg-gray-400 text-gray-800'
                   : 'text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -317,7 +317,7 @@ const MemoryApp: React.FC = () => {
               onClick={() => handleSortChange('date')}
               className={`px-3 py-1 text-sm rounded-full transition-colors ${
                 sortBy === 'date'
-                  ? 'bg-yellow-400 text-gray-800'
+                  ? 'bg-gray-400 text-gray-800'
                   : 'text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -327,7 +327,7 @@ const MemoryApp: React.FC = () => {
               onClick={() => handleSortChange('relevance')}
               className={`px-3 py-1 text-sm rounded-full transition-colors ${
                 sortBy === 'relevance'
-                  ? 'bg-yellow-400 text-gray-800'
+                  ? 'bg-gray-400 text-gray-800'
                   : 'text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -400,7 +400,7 @@ const MemoryApp: React.FC = () => {
                   {memory.keywords?.slice(0, 3).map((keyword) => (
                     <span
                       key={keyword}
-                      className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mr-1 mb-1"
+                      className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded mr-1 mb-1"
                     >
                       {keyword}
                     </span>

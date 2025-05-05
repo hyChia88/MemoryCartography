@@ -14,3 +14,119 @@
 2025-04-24 16:52:55,111 - INFO: User photos processed: 0
 2025-04-24 16:52:55,111 - INFO: Public photos processed: 0
 2025-04-24 16:52:55,111 - INFO: Database created at: data\metadata\memories.db
+2025-04-24 18:30:40,927 - INFO: Processing user photos...
+2025-04-24 18:30:40,929 - INFO: Found 0 images in data\raw\user_photos_ext
+2025-04-24 18:30:40,933 - INFO: Processing public photos...
+2025-04-24 18:30:40,934 - INFO: Found 0 images in data\raw\public_photos_ext
+2025-04-24 18:30:40,935 - INFO: Creating SQLite database...
+2025-04-24 18:30:40,953 - INFO: User photos processed: 0
+2025-04-24 18:30:40,953 - INFO: Public photos processed: 0
+2025-04-24 18:30:40,954 - INFO: Database created at: data\metadata-ext\memories.db
+2025-04-24 18:31:38,241 - INFO: Processing user photos...
+2025-04-24 18:31:38,246 - INFO: Found 16 images in data\raw\user_photos_ext
+2025-04-24 18:31:48,431 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:31:48,435 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7917.jpg: 4 keywords, description length: 776
+2025-04-24 18:31:54,763 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:31:54,764 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7918.jpg: 5 keywords, description length: 572
+2025-04-24 18:32:08,678 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:32:08,686 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7924.jpg: 5 keywords, description length: 667
+2025-04-24 18:32:18,240 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:32:18,242 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7958.jpg: 4 keywords, description length: 539
+2025-04-24 18:32:27,515 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:32:27,516 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7967.jpg: 4 keywords, description length: 569
+2025-04-24 18:32:39,693 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:32:39,695 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7968.jpg: 4 keywords, description length: 626
+2025-04-24 18:32:47,841 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:32:47,843 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7969.jpg: 4 keywords, description length: 656
+2025-04-24 18:32:55,379 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:32:55,381 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7989.jpg: 4 keywords, description length: 483
+2025-04-24 18:33:03,011 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:33:03,014 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_7990.jpg: 4 keywords, description length: 630
+2025-04-24 18:33:10,449 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:33:10,451 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_8019.jpg: 3 keywords, description length: 476
+2025-04-24 18:33:17,571 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:33:17,574 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_8039.jpg: 4 keywords, description length: 620
+2025-04-24 18:33:26,847 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:33:26,849 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_8045.jpg: 4 keywords, description length: 659
+2025-04-24 18:33:37,395 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:33:37,397 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_8046.jpg: 4 keywords, description length: 645
+2025-04-24 18:33:50,415 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:33:50,417 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_8047.jpg: 5 keywords, description length: 547
+2025-04-24 18:33:59,320 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:33:59,322 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_8048.jpg: 5 keywords, description length: 628
+2025-04-24 18:34:07,274 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:34:07,279 - INFO: Successfully analyzed data\raw\user_photos_ext\IMG_8080.jpg: 4 keywords, description length: 572
+2025-04-24 18:34:07,285 - INFO: Processing public photos...
+2025-04-24 18:34:07,287 - INFO: Found 0 images in data\raw\public_photos_ext
+2025-04-24 18:34:07,288 - INFO: Creating SQLite database...
+2025-04-24 18:34:07,301 - INFO: User photos processed: 16
+2025-04-24 18:34:07,301 - INFO: Public photos processed: 0
+2025-04-24 18:34:07,302 - INFO: Database created at: data\metadata-ext\memories.db
+2025-04-24 18:43:33,079 - INFO: Processing user photos...
+2025-04-24 18:43:33,082 - INFO: Found 0 images in data\raw\user_photos_ext
+2025-04-24 18:43:33,087 - INFO: Processing public photos...
+2025-04-24 18:43:33,090 - INFO: Found 6 images in data\raw\public_photos_ext
+2025-04-24 18:43:45,127 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:43:45,130 - INFO: Successfully analyzed data\raw\public_photos_ext\Screenshot 2025-04-24 184053.png: 5 keywords, description length: 684
+2025-04-24 18:43:50,851 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:43:50,853 - INFO: Successfully analyzed data\raw\public_photos_ext\Screenshot 2025-04-24 184058.png: 4 keywords, description length: 679
+2025-04-24 18:43:56,570 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:43:56,571 - INFO: Successfully analyzed data\raw\public_photos_ext\Screenshot 2025-04-24 184104.png: 4 keywords, description length: 602
+2025-04-24 18:44:04,544 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:44:04,546 - INFO: Successfully analyzed data\raw\public_photos_ext\Screenshot 2025-04-24 184108.png: 4 keywords, description length: 611
+2025-04-24 18:44:12,683 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:44:12,685 - INFO: Successfully analyzed data\raw\public_photos_ext\Screenshot 2025-04-24 184113.png: 5 keywords, description length: 705
+2025-04-24 18:44:18,387 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:44:18,389 - INFO: Successfully analyzed data\raw\public_photos_ext\Screenshot 2025-04-24 184118.png: 4 keywords, description length: 619
+2025-04-24 18:44:18,436 - INFO: Creating SQLite database...
+2025-04-24 18:44:18,518 - INFO: User photos processed: 0
+2025-04-24 18:44:18,519 - INFO: Public photos processed: 6
+2025-04-24 18:44:18,519 - INFO: Database created at: data\metadata-ext\memories.db
+2025-04-24 18:45:08,888 - INFO: Processing user photos...
+2025-04-24 18:45:08,889 - INFO: Found 0 images in data\raw\user_photos_ext
+2025-04-24 18:45:08,894 - INFO: Processing public photos...
+2025-04-24 18:45:08,895 - INFO: Found 0 images in data\raw\public_photos_ext
+2025-04-24 18:45:08,896 - INFO: Creating SQLite database...
+2025-04-24 18:45:08,898 - INFO: User photos processed: 0
+2025-04-24 18:45:08,898 - INFO: Public photos processed: 0
+2025-04-24 18:45:08,899 - INFO: Database created at: data\metadata-ext\memories.db
+2025-04-24 18:46:27,856 - INFO: Processing user photos...
+2025-04-24 18:46:27,858 - INFO: Found 0 images in data\raw\user_photos_ext
+2025-04-24 18:46:27,862 - INFO: Processing public photos...
+2025-04-24 18:46:27,862 - INFO: Found 0 images in data\raw\public_photos_ext
+2025-04-24 18:46:27,864 - INFO: Creating SQLite database...
+2025-04-24 18:46:27,873 - INFO: User photos processed: 0
+2025-04-24 18:46:27,873 - INFO: Public photos processed: 0
+2025-04-24 18:46:27,873 - INFO: Database created at: data\metadata-ext\memories.db
+2025-04-24 18:49:12,839 - INFO: Processing user photos...
+2025-04-24 18:49:12,843 - INFO: Found 6 images in data\raw\user_photos_ext
+2025-04-24 18:49:20,967 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:49:20,969 - INFO: Successfully analyzed data\raw\user_photos_ext\Pittsbutgh\IMG_8039.jpg: 4 keywords, description length: 465
+2025-04-24 18:49:32,271 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:49:32,273 - INFO: Successfully analyzed data\raw\user_photos_ext\Pittsbutgh\IMG_8045.jpg: 4 keywords, description length: 558
+2025-04-24 18:49:45,652 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:49:45,654 - INFO: Successfully analyzed data\raw\user_photos_ext\Pittsbutgh\IMG_8046.jpg: 3 keywords, description length: 648
+2025-04-24 18:49:55,766 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:49:55,768 - INFO: Successfully analyzed data\raw\user_photos_ext\Pittsbutgh\IMG_8047.jpg: 5 keywords, description length: 631
+2025-04-24 18:50:10,383 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:10,385 - INFO: Successfully analyzed data\raw\user_photos_ext\Pittsbutgh\IMG_8048.jpg: 4 keywords, description length: 564
+2025-04-24 18:50:19,735 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:19,738 - INFO: Successfully analyzed data\raw\user_photos_ext\Pittsbutgh\IMG_8080.jpg: 4 keywords, description length: 622
+2025-04-24 18:50:19,743 - INFO: Processing public photos...
+2025-04-24 18:50:19,747 - INFO: Found 6 images in data\raw\public_photos_ext
+2025-04-24 18:50:29,111 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:29,113 - INFO: Successfully analyzed data\raw\public_photos_ext\Pittsburgh\Screenshot 2025-04-24 184053.png: 5 keywords, description length: 613
+2025-04-24 18:50:34,592 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:34,594 - INFO: Successfully analyzed data\raw\public_photos_ext\Pittsburgh\Screenshot 2025-04-24 184058.png: 5 keywords, description length: 673
+2025-04-24 18:50:40,640 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:40,641 - INFO: Successfully analyzed data\raw\public_photos_ext\Pittsburgh\Screenshot 2025-04-24 184104.png: 4 keywords, description length: 753
+2025-04-24 18:50:45,404 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:45,406 - INFO: Successfully analyzed data\raw\public_photos_ext\Pittsburgh\Screenshot 2025-04-24 184108.png: 5 keywords, description length: 772
+2025-04-24 18:50:52,248 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:52,249 - INFO: Successfully analyzed data\raw\public_photos_ext\Pittsburgh\Screenshot 2025-04-24 184113.png: 4 keywords, description length: 535
+2025-04-24 18:50:59,583 - INFO: HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-04-24 18:50:59,584 - INFO: Successfully analyzed data\raw\public_photos_ext\Pittsburgh\Screenshot 2025-04-24 184118.png: 5 keywords, description length: 681
+2025-04-24 18:50:59,586 - INFO: Creating SQLite database...
+2025-04-24 18:50:59,598 - INFO: User photos processed: 6
+2025-04-24 18:50:59,599 - INFO: Public photos processed: 6
+2025-04-24 18:50:59,599 - INFO: Database created at: data\metadata-ext\memories.db

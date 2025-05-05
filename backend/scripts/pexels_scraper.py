@@ -97,16 +97,20 @@ def scrape_location_images(location, output_dir, num_images=100):
 
 if __name__ == "__main__":
     import argparse
-    
+    import os  # Make sure you import the os module
+
     parser = argparse.ArgumentParser(description="Scrape images from Pexels")
     parser.add_argument("location", help="Location to search for")
-    parser.add_argument("--output", "-o", help="Output directory", default="data/public_photos")
-    parser.add_argument("--num", "-n", type=int, help="Number of images to download", default=50)
-    
+    parser.add_argument("-o", "--output-directory", help="Output directory", default="data/public_photos-ext")
+    parser.add_argument("-n", "--num-images", type=int, help="Number of images to download", default=15)
+
     args = parser.parse_args()
-    
+
     # Create the output directory for this location
-    output_dir = os.path.join(args.output, args.location.replace(" ", "_"))
-    
-    # Scrape images
-    scrape_location_images(args.location, output_dir, args.num)
+    output_dir = os.path.join(args.output_directory, args.location.replace(" ", "_"))
+
+    # Scrape images (assuming you have this function defined)
+    scrape_location_images(args.location, output_dir, args.num_images)
+    print(f"Searching for: {args.location}")
+    print(f"Output directory: {output_dir}")
+    print(f"Number of images: {args.num_images}")

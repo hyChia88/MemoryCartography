@@ -19,3 +19,4 @@ backend\memories.db
 backend\data
 *.env
 **/.env
+backend\data\processed
