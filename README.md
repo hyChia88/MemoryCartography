@@ -43,10 +43,10 @@ Architectural Memory Cartography is an AI-powered spatial recommendation system 
 ### Data Annotation Pipeline
 
 ```
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│  Floor Plan   │───►│Object Detection│───►│Element Labeling│───►│ Spatial Data  │
-│  Input        │    │   (YOLOv8)    │    │   Pipeline    │    │   Validation  │
-└───────────────┘    └───────────────┘    └───────────────┘    └───────────────┘
+┌───────────────┐    ┌───────────────┐    ┌────────────────┐    ┌──────────────┐
+│  Floor Plan   │───►│ Obj Detection │───►│Element Labeling│───►│ Spatial Data │
+│  Input        │    │   (YOLOv8)    │    │   Pipeline     │    │  Validation  │
+└───────────────┘    └───────────────┘    └────────────────┘    └──────────────┘
                                                                        │
                                                                        ▼
 ┌───────────────┐    ┌───────────────┐    ┌───────────────┐    ┌───────────────┐
