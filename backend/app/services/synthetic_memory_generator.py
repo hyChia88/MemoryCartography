@@ -10,16 +10,14 @@ from PIL import Image
 import openai
 from dotenv import load_dotenv
 import torch
-from torchvision.models import resnet50
-import torchvision.transforms as T
 
 load_dotenv()  # Load environment variables from .env file
 
 class SyntheticMemoryGenerator:
-    """Generate synthetic memory narratives based on real memories and spatial data."""
+    """Generate synthetic memory narratives based on real memories and detected objects."""
     
     def __init__(self):
-        """Initialize the synthetic memory generator with visual analysis capabilities."""
+        """Initialize the synthetic memory generator."""
         # Get OpenAI API key from environment variables
         openai_api_key = os.getenv("OPENAI_API_KEY")
         if openai_api_key:
@@ -28,95 +26,6 @@ class SyntheticMemoryGenerator:
         else:
             self.openai_available = False
             print("WARNING: OpenAI API key not found. Synthetic memories will use fallback method.")
-            
-        # Initialize visual feature extraction capabilities
-        self.image_model = self._initialize_image_model()
-        if self.image_model:
-            self.transform = T.Compose([
-                T.Resize((224, 224)),
-                T.ToTensor(),
-                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
-    
-    def _initialize_image_model(self):
-        """Initialize ResNet model for visual feature extraction."""
-        try:
-            model = resnet50(pretrained=True)
-            model.eval()  # Set to evaluation mode
-            return model
-        except Exception as e:
-            print(f"Error initializing image model: {e}")
-            return None
-            
-    def extract_image_features(self, image_path):
-        """Extract feature vector from an image for similarity comparison."""
-        if not self.image_model:
-            return None
-            
-        try:
-            if not os.path.exists(image_path):
-                print(f"Image not found: {image_path}")
-                return None
-                
-            # Load and preprocess the image
-            image = Image.open(image_path).convert("RGB")
-            img_tensor = self.transform(image).unsqueeze(0)  # Add batch dimension
-            
-            # Extract features
-            with torch.no_grad():
-                features = self.image_model(img_tensor).squeeze(0)
-            
-            return features.numpy()
-        except Exception as e:
-            print(f"Error extracting image features: {e}")
-            return None
-    
-    def analyze_floor_plan(self, floor_plan_path):
-        """Extract architectural features from a floor plan image."""
-        # This is a simplified placeholder - in a real system you would use
-        # specialized architectural feature extraction models
-        features = self.extract_image_features(floor_plan_path)
-        
-        if features is None:
-            return {
-                "success": False,
-                "message": "Failed to extract features from floor plan"
-            }
-            
-        # In a real system, this would detect rooms, doors, windows, etc.
-        # For now, we'll return a simplified analysis
-        return {
-            "success": True,
-            "feature_vector": features.tolist(),
-            "estimated_rooms": 4,  # Placeholder values
-            "estimated_area": 120,  # Square meters
-            "detected_elements": [
-                {"type": "room", "label": "living_room", "confidence": 0.92},
-                {"type": "room", "label": "kitchen", "confidence": 0.89},
-                {"type": "door", "count": 5, "confidence": 0.95},
-                {"type": "window", "count": 6, "confidence": 0.91}
-            ]
-        }
-        
-    def find_similar_floor_plans(self, query_plan_path, dataset_paths, top_n=5):
-        """Find similar floor plans based on visual features."""
-        query_features = self.extract_image_features(query_plan_path)
-        if query_features is None:
-            return []
-            
-        results = []
-        for path in dataset_paths:
-            features = self.extract_image_features(path)
-            if features is not None:
-                # Calculate cosine similarity
-                similarity = np.dot(query_features, features) / (
-                    np.linalg.norm(query_features) * np.linalg.norm(features)
-                )
-                results.append((path, float(similarity)))
-                
-        # Sort by similarity (highest first)
-        results.sort(key=lambda x: x[1], reverse=True)
-        return results[:top_n]
     
     def generate_memory_narrative(self, memories: List[Dict[str, Any]], search_term: str = None) -> Dict[str, Any]:
         """
@@ -142,29 +51,30 @@ class SyntheticMemoryGenerator:
         else:
             return self._generate_fallback(memories, search_term)
     
-    def generate_architectural_narrative(self, floor_plan_data, spatial_memories=None):
+    def generate_spatial_narrative_from_objects(self, detected_objects: List[Dict], location: str = "an unknown place", date: str = None) -> Dict[str, Any]:
         """
-        Generate a narrative description of architectural space.
+        Generate a narrative description based on detected objects in an image.
         
         Args:
-            floor_plan_data: Data extracted from floor plan analysis
-            spatial_memories: Optional related spatial memories
+            detected_objects: List of objects detected in the image
+            location: Optional location information
+            date: Optional date information
             
         Returns:
-            Dict containing narrative and metadata about the architectural space
+            Dict containing narrative text and metadata
         """
-        if not floor_plan_data:
+        if not detected_objects:
             return {
-                "text": "No floor plan data provided for analysis.",
+                "text": "No objects detected to generate a narrative.",
                 "keywords": [],
                 "spatial_elements": []
             }
             
-        # Use OpenAI if available for rich architectural descriptions
+        # Use OpenAI if available
         if self.openai_available:
-            return self._generate_architectural_description_with_openai(floor_plan_data, spatial_memories)
+            return self._generate_spatial_narrative_with_openai(detected_objects, location, date)
         else:
-            return self._generate_architectural_description_fallback(floor_plan_data, spatial_memories)
+            return self._generate_spatial_narrative_fallback(detected_objects, location, date)
     
     def _generate_with_openai(self, memories: List[Dict[str, Any]], search_term: Optional[str]) -> Dict[str, Any]:
         """Generate synthetic memory using OpenAI."""
@@ -175,11 +85,25 @@ class SyntheticMemoryGenerator:
             # Create a list of memory descriptions for the prompt
             memory_descriptions = []
             all_keywords = []
+            detected_objects_info = []
             
             for i, memory in enumerate(memories_by_date):
                 desc = f"Memory {i+1}: {memory.get('date', 'Unknown date')} - {memory.get('location', 'Unknown location')}\n"
                 desc += f"Title: {memory.get('title', 'Untitled')}\n"
                 desc += f"Description: {memory.get('description', '')}\n"
+                
+                # Add object detection results if available
+                if memory.get('detected_objects'):
+                    obj_desc = "Detected objects: "
+                    obj_list = []
+                    
+                    for obj in memory.get('detected_objects'):
+                        obj_list.append(f"{obj.get('label')} (count: {obj.get('count')})")
+                        
+                    if obj_list:
+                        obj_desc += ", ".join(obj_list)
+                        desc += obj_desc + "\n"
+                        detected_objects_info.extend(obj_list)
                 
                 keywords = memory.get('keywords', [])
                 if keywords:
@@ -188,9 +112,9 @@ class SyntheticMemoryGenerator:
                 
                 memory_descriptions.append(desc)
             
-            # Create the prompt for OpenAI - Explicitly mention JSON to resolve the API error
+            # Create the prompt for OpenAI with explicit JSON format
             system_prompt = """You are a spatial memory synthesizer that creates natural, descriptive narratives from memory fragments. 
-            Your task is to weave together multiple spatial memories into a coherent narrative that sounds like someone reminiscing about architectural spaces they've experienced.
+            Your task is to weave together multiple spatial memories into a coherent narrative that sounds like someone reminiscing about spaces they've experienced.
             
             IMPORTANT: Respond ONLY in the following strict JSON format:
             {
@@ -202,20 +126,20 @@ class SyntheticMemoryGenerator:
             
             Guidelines for generating the narrative:
             1. Write in first person, as if these are your personal memories of spaces
-            2. Focus on architectural and spatial qualities (light, proportion, materials, etc.)
+            2. Focus on the objects detected in the memories and their spatial relationships
             3. Mention how the spaces made you feel and how you interacted with them
             4. Make connections between different spatial experiences when possible
             5. Use a natural, conversational tone
-            6. Highlight important architectural elements using *asterisks*
+            6. Highlight important objects or elements using *asterisks*
             7. Keep the narrative concise (3-5 sentences)
-            8. Include a list of spatial elements mentioned (rooms, windows, materials, etc.)"""
+            8. Include a list of the spatial elements mentioned"""
             
             memories_text = "\n\n".join(memory_descriptions)
             
             if search_term:
-                user_prompt = f"Generate a synthetic spatial memory narrative based on these related memories. The search term that triggered these memories was '{search_term}':\n\n{memories_text}"
+                user_prompt = f"Generate a synthetic memory narrative based on these memories with detected objects. The search term that triggered these memories was '{search_term}':\n\n{memories_text}"
             else:
-                user_prompt = f"Generate a synthetic spatial memory narrative based on these related memories:\n\n{memories_text}"
+                user_prompt = f"Generate a synthetic memory narrative based on these memories with detected objects:\n\n{memories_text}"
             
             # Make the API call
             response = self.openai_client.chat.completions.create(
@@ -244,7 +168,7 @@ class SyntheticMemoryGenerator:
                         "keywords": keywords,
                         "highlighted_terms": highlighted_terms,
                         "spatial_elements": spatial_elements,
-                        "source_memories": [m["id"] for m in memories]
+                        "source_memories": [m["id"] for m in memories if "id" in m]
                     }
                 except json.JSONDecodeError:
                     print("Error parsing OpenAI response")
@@ -256,46 +180,45 @@ class SyntheticMemoryGenerator:
             print(f"Error generating memory with OpenAI: {e}")
             return self._generate_fallback(memories, search_term)
     
-    def _generate_architectural_description_with_openai(self, floor_plan_data, spatial_memories=None):
-        """Generate architectural description using OpenAI."""
+    def _generate_spatial_narrative_with_openai(self, detected_objects: List[Dict], location: str, date: str) -> Dict[str, Any]:
+        """Generate a spatial narrative from detected objects using OpenAI."""
         try:
-            # Prepare floor plan data for the prompt
-            floor_plan_info = json.dumps(floor_plan_data, indent=2)
+            # Prepare object detection data
+            object_descriptions = []
             
-            # Add spatial memories if available
-            memories_text = ""
-            if spatial_memories and len(spatial_memories) > 0:
-                memory_descriptions = []
-                for i, memory in enumerate(spatial_memories):
-                    desc = f"Related Memory {i+1}: {memory.get('title', 'Untitled')}\n"
-                    desc += f"Description: {memory.get('description', '')}\n"
-                    memory_descriptions.append(desc)
-                memories_text = "\n\n".join(memory_descriptions)
+            for obj in detected_objects:
+                label = obj.get('label', 'unknown')
+                count = obj.get('count', 1)
+                confidence = obj.get('confidence', 0.0)
+                
+                if count == 1:
+                    object_descriptions.append(f"A {label} (confidence: {confidence:.2f})")
+                else:
+                    object_descriptions.append(f"{count} {label}s (confidence: {confidence:.2f})")
             
             # Create the prompt
-            system_prompt = """You are an architectural analyst that creates detailed descriptions of spaces based on floor plan data.
-            Your task is to generate an insightful architectural description highlighting key spatial features.
+            system_prompt = """You are a spatial analyst that creates descriptive narratives from detected objects in an image. 
+            Your task is to create a coherent narrative that describes the spatial arrangement and relationships between objects.
             
             IMPORTANT: Respond ONLY in the following strict JSON format:
             {
-              "description": "An architectural description (3-5 sentences)",
-              "spatial_qualities": ["quality1", "quality2", ...],
-              "design_elements": ["element1", "element2", ...],
-              "suggested_improvements": ["improvement1", "improvement2", ...]
+              "narrative": "A descriptive narrative (3-5 sentences) about the spatial scene",
+              "keywords": ["keyword1", "keyword2", ...],
+              "spatial_elements": ["element1", "element2", ...],
+              "spatial_relationships": ["relationship1", "relationship2", ...]
             }
             
-            Guidelines for generating the description:
-            1. Focus on spatial organization, flow, and proportions
-            2. Discuss natural light and views when information is available
-            3. Comment on the relationship between spaces
-            4. Highlight notable architectural features
-            5. Include suggestions for potential improvements
-            6. Keep the description objective and professional"""
+            Guidelines for generating the narrative:
+            1. Focus on the spatial relationships between detected objects
+            2. Imagine how these objects might be arranged in a realistic scene
+            3. Use specific spatial terms (above, below, beside, between, etc.)
+            4. Describe potential architectural elements that might contain these objects
+            5. Keep the narrative concise and focused on spatial qualities"""
             
-            user_prompt = f"Generate an architectural description based on this floor plan data:\n\n{floor_plan_info}"
+            objects_text = "\n".join(object_descriptions)
             
-            if memories_text:
-                user_prompt += f"\n\nConsider these related spatial memories as context:\n\n{memories_text}"
+            date_info = f" on {date}" if date else ""
+            user_prompt = f"Generate a spatial narrative based on these objects detected in an image from {location}{date_info}:\n\n{objects_text}"
             
             # Make the API call
             response = self.openai_client.chat.completions.create(
@@ -314,56 +237,120 @@ class SyntheticMemoryGenerator:
                     result = json.loads(response.choices[0].message.content)
                     
                     return {
-                        "text": result.get("description", ""),
-                        "spatial_qualities": result.get("spatial_qualities", []),
-                        "design_elements": result.get("design_elements", []),
-                        "suggested_improvements": result.get("suggested_improvements", [])
+                        "text": result.get("narrative", ""),
+                        "keywords": result.get("keywords", []),
+                        "spatial_elements": result.get("spatial_elements", []),
+                        "spatial_relationships": result.get("spatial_relationships", [])
                     }
                 except json.JSONDecodeError:
-                    print("Error parsing OpenAI architectural description response")
+                    print("Error parsing OpenAI spatial narrative response")
             
-            # Fallback if OpenAI fails
-            return self._generate_architectural_description_fallback(floor_plan_data, spatial_memories)
+            # Fallback
+            return self._generate_spatial_narrative_fallback(detected_objects, location, date)
             
         except Exception as e:
-            print(f"Error generating architectural description with OpenAI: {e}")
-            return self._generate_architectural_description_fallback(floor_plan_data, spatial_memories)
+            print(f"Error generating spatial narrative with OpenAI: {e}")
+            return self._generate_spatial_narrative_fallback(detected_objects, location, date)
     
-    def _generate_architectural_description_fallback(self, floor_plan_data, spatial_memories=None):
-        """Generate a simple architectural description without OpenAI."""
-        # Extract data for description
-        num_rooms = floor_plan_data.get("estimated_rooms", 0)
-        area = floor_plan_data.get("estimated_area", 0)
-        elements = floor_plan_data.get("detected_elements", [])
+    def _generate_spatial_narrative_fallback(self, detected_objects: List[Dict], location: str, date: str) -> Dict[str, Any]:
+        """Generate a fallback spatial narrative from detected objects."""
+        if not detected_objects:
+            return {
+                "text": "No objects were detected in this scene.",
+                "keywords": [],
+                "spatial_elements": []
+            }
+            
+        # Count object types
+        object_counts = {}
+        for obj in detected_objects:
+            label = obj.get('label', 'object')
+            count = obj.get('count', 1)
+            object_counts[label] = count
+            
+        # Create description parts
+        description_parts = []
         
-        # Create simple description
-        text = f"This floor plan appears to be a {area} square meter space with approximately {num_rooms} rooms. "
+        # Add date and location
+        date_str = f"On {date}, " if date else ""
+        location_str = f"in {location}" if location != "an unknown place" else "in a space"
         
-        # Add details about detected elements
-        room_types = [e["label"] for e in elements if e.get("type") == "room"]
-        if room_types:
-            text += f"The layout includes {', '.join(room_types)}. "
+        intro = f"{date_str}I observed a scene {location_str} containing "
         
-        # Count doors and windows
-        doors = next((e for e in elements if e.get("type") == "door"), {})
-        windows = next((e for e in elements if e.get("type") == "window"), {})
+        # Add object descriptions
+        object_phrases = []
+        for label, count in object_counts.items():
+            if count == 1:
+                object_phrases.append(f"a *{label}*")
+            else:
+                object_phrases.append(f"{count} *{label}s*")
+                
+        if len(object_phrases) == 1:
+            intro += f"{object_phrases[0]}. "
+        elif len(object_phrases) == 2:
+            intro += f"{object_phrases[0]} and {object_phrases[1]}. "
+        else:
+            last_phrase = object_phrases.pop()
+            intro += f"{', '.join(object_phrases)}, and {last_phrase}. "
+            
+        description_parts.append(intro)
         
-        if doors.get("count", 0) > 0:
-            text += f"There are {doors.get('count')} doors. "
+        # Add spatial relationships if we have multiple objects
+        if len(object_counts) > 1:
+            # Get object keys
+            object_keys = list(object_counts.keys())
+            
+            # Create some imagined spatial relationships
+            spatial_relationships = [
+                "beside",
+                "near",
+                "surrounding",
+                "in front of",
+                "behind",
+                "above",
+                "below"
+            ]
+            
+            # Generate a random relationship
+            if len(object_keys) >= 2:
+                obj1 = object_keys[0]
+                obj2 = object_keys[1]
+                relation = random.choice(spatial_relationships)
+                
+                description_parts.append(f"The {obj1} was {relation} the {obj2}, creating an interesting spatial dynamic. ")
+                
+        # Add a reflective statement about the space
+        spatial_qualities = [
+            "inviting",
+            "structured",
+            "balanced",
+            "dynamic",
+            "harmonious",
+            "functional"
+        ]
         
-        if windows.get("count", 0) > 0:
-            text += f"The space has {windows.get('count')} windows providing natural light. "
+        quality = random.choice(spatial_qualities)
+        description_parts.append(f"The arrangement felt *{quality}* and made an impression on my spatial memory.")
         
-        # Add general design assessment
-        design_qualities = ["functional", "compact", "spacious", "well-proportioned", "open"]
-        selected_quality = random.choice(design_qualities)
-        text += f"Overall, the design appears to be {selected_quality}."
+        # Combine parts into full narrative
+        narrative = "".join(description_parts)
+        
+        # Extract keywords
+        keywords = list(object_counts.keys())
+        if quality:
+            keywords.append(quality)
+            
+        # Extract spatial elements (all objects are spatial elements)
+        spatial_elements = list(object_counts.keys())
+        
+        # Highlighted terms are the object labels
+        highlighted_terms = [term for term in keywords if term in narrative]
         
         return {
-            "text": text,
-            "spatial_qualities": [selected_quality],
-            "design_elements": [e["type"] for e in elements],
-            "suggested_improvements": ["Consider improving natural light", "Optimize circulation paths"]
+            "text": narrative,
+            "keywords": keywords,
+            "highlighted_terms": highlighted_terms,
+            "spatial_elements": spatial_elements
         }
     
     def _generate_fallback(self, memories: List[Dict[str, Any]], search_term: Optional[str]) -> Dict[str, Any]:
@@ -377,10 +364,19 @@ class SyntheticMemoryGenerator:
         locations = [m.get('location', '') for m in sorted_memories]
         descriptions = [m.get('description', '') for m in sorted_memories]
         
-        # Collect all keywords
+        # Collect all keywords and detected objects
         all_keywords = []
+        all_objects = []
+        
         for memory in sorted_memories:
             all_keywords.extend(memory.get('keywords', []))
+            
+            # Extract object information if available
+            if memory.get('detected_objects'):
+                for obj in memory.get('detected_objects'):
+                    obj_label = obj.get('label', '')
+                    if obj_label and obj_label not in all_objects:
+                        all_objects.append(obj_label)
         
         # Get unique keywords
         unique_keywords = list(set(all_keywords))
@@ -406,6 +402,19 @@ class SyntheticMemoryGenerator:
                 text += f"I explored spaces in {', '.join(unique_locations[:3])}. "
             else:
                 text += f"I experienced {titles[0]}. "
+        
+        # Add detected objects if available
+        if all_objects:
+            # Take up to 5 most interesting objects
+            selected_objects = all_objects[:5]
+            
+            if len(selected_objects) == 1:
+                text += f"I noticed a *{selected_objects[0]}* in the space. "
+            elif len(selected_objects) == 2:
+                text += f"The space contained a *{selected_objects[0]}* and a *{selected_objects[1]}*. "
+            else:
+                last_obj = selected_objects.pop()
+                text += f"I observed various objects including {', '.join(['*' + obj + '*' for obj in selected_objects])}, and a *{last_obj}*. "
         
         # Add selected details from descriptions
         if descriptions:
@@ -439,13 +448,25 @@ class SyntheticMemoryGenerator:
             if keyword in text:
                 highlighted_terms.append(keyword)
         
-        # Extract spatial elements from memories
+        # Add detected objects to highlighted terms
+        for obj in all_objects[:3]:  # Add up to 3 top objects
+            if obj in text and obj not in highlighted_terms:
+                highlighted_terms.append(obj)
+        
+        # Extract spatial elements (combine keywords and objects)
         spatial_elements = []
         architectural_keywords = ["room", "window", "door", "ceiling", "floor", "wall", "light", "space"]
         
+        # From keywords
         for keyword in all_keywords:
             if any(arch_term in keyword.lower() for arch_term in architectural_keywords):
                 spatial_elements.append(keyword)
+                
+        # From detected objects
+        for obj in all_objects:
+            if any(arch_term in obj.lower() for arch_term in architectural_keywords):
+                if obj not in spatial_elements:
+                    spatial_elements.append(obj)
         
         # If search term is provided, add it to highlighted terms
         if search_term and search_term.lower() in text.lower():
@@ -453,13 +474,12 @@ class SyntheticMemoryGenerator:
         
         return {
             "text": text,
-            "keywords": important_keywords,
+            "keywords": important_keywords + all_objects[:3],  # Combine keywords and top objects
             "highlighted_terms": highlighted_terms,
             "spatial_elements": spatial_elements[:5],
-            "source_memories": [m["id"] for m in sorted_memories]
+            "source_memories": [m["id"] for m in sorted_memories if "id" in m]
         }
-
-
+        
 # Create a singleton instance
 _generator = None
 

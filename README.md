@@ -40,21 +40,6 @@ Architectural Memory Cartography is an AI-powered spatial recommendation system 
 └───────────────┘    └───────────────┘    └───────────────┘    └───────────────┘
 ```
 
-### Data Annotation Pipeline
-
-```
-┌───────────────┐    ┌───────────────┐    ┌────────────────┐    ┌──────────────┐
-│  Floor Plan   │───►│ Obj Detection │───►│Element Labeling│───►│ Spatial Data │
-│  Input        │    │   (YOLOv8)    │    │   Pipeline     │    │  Validation  │
-└───────────────┘    └───────────────┘    └────────────────┘    └──────────────┘
-                                                                       │
-                                                                       ▼
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│ Training Data │◄───│Data Versioning│◄───│  Annotation   │◄───│Quality Control│
-│  Generation   │    │    System     │    │  Refinement   │    │     Checks    │
-└───────────────┘    └───────────────┘    └───────────────┘    └───────────────┘
-```
-
 ## Technical Implementation Details
 
 ### Architectural Feature Extraction
@@ -230,6 +215,31 @@ The system can provide valuable insights for architectural design:
 - **Integration**: OpenAI GPT-4 for narrative synthesis
 - **Data Processing**: Pandas, NumPy
 - **Image Processing**: PIL, OpenCV
+
+## Implementation Steps
+Data Scraping Collect images for public and user photo databases: bashpython backend/scripts/pexels_scraper.py Images will be saved in:
+```
+backend/data/raw/public_photos
+backend/data/raw/user_photos
+```
+Data Processing Prepare and process the collected images:
+```
+python backend/scripts/process_data.py
+```
+
+Run the Application Start the backend server:
+
+```
+cd backend
+uvicorn app.main:app --reload
+```
+
+In a new terminal, start the frontend:
+```
+cd frontend
+npm install
+npm start
+```
 
 ## Future Development Directions
 
