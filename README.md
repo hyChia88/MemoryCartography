@@ -16,8 +16,7 @@ Memory Cartography is an innovative digital humanities project that explores the
 ```
 ┌───────────────┐    ┌───────────────┐    ┌───────────────┐    ┌───────────────┐
 │ Spatial Data  │───►│Feature Extract│───►│ Vector Store  │───►│  Similarity   │
-│ Input (Plans  │    │ (ResNet+YOLO) │    │  (TF-IDF)     │    │  Computation  │
-│ & Images)     │    │               │    │               │    │               │
+│ Input (Images)│    │ (ResNet+YOLO) │    │  (TF-IDF)     │    │  Computation  │
 └───────────────┘    └───────────────┘    └───────────────┘    └───────────────┘
                                                                        │
                                                                        ▼
