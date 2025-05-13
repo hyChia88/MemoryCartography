@@ -3,12 +3,15 @@
 **Author:** Chia Hui Yen  
 **Mentor:** Professor Jimmy Cheng   
 **Date:** 2025 Spring     
+*Backend code is done, frontend is still under construction*
+
 ![alt text](image.png)
 ![alt text](image-3.png)
 
 ## 🌟 Project Overview
 
 Memory Cartography is an innovative digital humanities project that explores the fluid, fragmented nature of spatial memory. Inspired by philosophers like Gaston Bachelard and Bernard Tschumi, this application challenges the traditional understanding of place as a static concept, instead revealing memory as a dynamic, deeply personal landscape.
+
 
 
 ### Architecture Overview
@@ -25,6 +28,7 @@ Memory Cartography is an innovative digital humanities project that explores the
 │ Visualization │    │  Generation   │    │    Engine     │    │   Analysis    │
 └───────────────┘    └───────────────┘    └───────────────┘    └───────────────┘
 ```
+![alt text](image-4.png)
 
 ## 🧭 Philosophical Foundations
 
