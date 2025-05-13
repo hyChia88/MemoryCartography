@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Web Framework & Server
 fastapi
 uvicorn
@@ -36,3 +37,25 @@ tqdm             # Progress bars (used in DataProcessor)
 # - regex (Often a dependency)
 # - argparse, pathlib (Standard libraries)
 # - Strict version pins (like ==x.y.z) unless absolutely necessary and known compatible
+=======
+fastapi==0.100.0
+uvicorn==0.23.0
+pydantic==2.0.0
+python-multipart==0.0.6
+SQLAlchemy==2.0.19
+Pillow==10.0.0
+numpy==1.25.1
+ftfy==6.1.1
+regex==2023.6.3
+torch==2.7.0
+transformers==4.30.2
+torch
+pillow
+numpy
+tqdm
+exifread
+geopy
+argparse
+pathlib
+aiofiles
+>>>>>>> 0b8f1ee8b13dfe2d6330a38357927c078c86dca7
