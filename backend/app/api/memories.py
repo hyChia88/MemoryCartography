@@ -1,517 +1,446 @@
-# app/api/memories.py
-from fastapi import APIRouter, HTTPException, Query, Depends
-from typing import List, Optional, Dict, Any
-import logging
-import sqlite3
+# Standard Library Imports
+import os
 import json
+import sqlite3
+import logging
+from pathlib import Path
 from datetime import datetime
+from typing import List, Optional, Dict, Any, Tuple
 
-from app.core.session import get_session_manager
-from app.services.memory_recommendation import MemoryRecommendationEngine
-from app.services.synthetic_memory_generator import get_synthetic_memory_generator
-from app.models import Memory, NarrativeResponse, WeightAdjustmentResponse
+# Third-Party Imports
+from fastapi import APIRouter, HTTPException, Query, Depends
+from pydantic import BaseModel, Field
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer # For text query embedding
+from openai import OpenAI
+from dotenv import load_dotenv
 
-# Configure router
+# --- Application-Specific Imports ---
+# Adjust these paths based on your project structure
+try:
+    from app.core.session import get_session_manager, SessionManager
+except ImportError:
+    logging.error("Failed to import session manager from app.core.session. Using dummy.")
+    # Dummy Session Manager for structure - Replace with your actual implementation
+    class SessionManager:
+        def get_session_paths(self, session_id: str) -> Optional[Dict[str, str]]: return None
+        def add_location(self, session_id: str, location: str): pass # Not used here but part of dummy
+    _dummy_session_manager = SessionManager()
+    def get_session_manager(): return _dummy_session_manager
+
+# --- Configuration ---
+load_dotenv()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
-# Initialize recommendation engine
-recommendation_engine = MemoryRecommendationEngine()
+# --- Initialize Models ---
+# Load a sentence transformer model for encoding text queries
+# This will download the model on first run if not cached
+try:
+    # Using a common, efficient model. Choose one appropriate for your needs.
+    text_embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+    logger.info("SentenceTransformer model 'all-MiniLM-L6-v2' loaded successfully.")
+except Exception as e:
+    logger.error(f"Failed to load SentenceTransformer model: {e}", exc_info=True)
+    text_embedding_model = None
+
+# Initialize OpenAI client for narrative generation
+openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_client = None
+if openai_api_key:
+    try:
+        openai_client = OpenAI(api_key=openai_api_key)
+        logger.info("OpenAI client initialized successfully for narrative generation.")
+    except Exception as e:
+        logger.error(f"Failed to initialize OpenAI client: {e}")
+else:
+    logger.warning("OPENAI_API_KEY not found. Narrative generation will be disabled.")
+
+
+# --- Pydantic Models ---
+class Memory(BaseModel):
+    """Represents a memory item returned by the API."""
+    id: int
+    filename: str
+    original_path: Optional[str] = None
+    processed_path: Optional[str] = None
+    title: Optional[str] = None
+    location: Optional[str] = None
+    date: Optional[str] = None
+    type: str # 'user' or 'public'
+    openai_keywords: Optional[List[str]] = Field(default_factory=list)
+    openai_description: Optional[str] = None
+    impact_weight: Optional[float] = 1.0
+    # Exclude embedding from default response unless specifically requested
+    # resnet_embedding: Optional[List[float]] = None
+    detected_objects: Optional[List[str]] = Field(default_factory=list)
+    image_url: Optional[str] = None # URL to access the image via API
+    # Add score for relevance if needed
+    relevance_score: Optional[float] = None
+
+class NarrativeResponse(BaseModel):
+    """Response model for the narrative generation endpoint."""
+    session_id: str
+    narrative_text: str
+    source_memory_ids: List[int] = Field(default_factory=list)
+    query: str
+
+
+# --- Helper Functions ---
+
+def get_db_connection(db_path: str) -> Optional[sqlite3.Connection]:
+    """Establishes a connection to the SQLite database."""
+    if not Path(db_path).exists():
+        logger.error(f"Database file not found at: {db_path}")
+        return None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row # Return rows as dictionary-like objects
+        logger.debug(f"Database connection established: {db_path}")
+        return conn
+    except sqlite3.Error as e:
+        logger.error(f"Error connecting to database {db_path}: {e}", exc_info=True)
+        return None
+
+def parse_memory_row(row: sqlite3.Row) -> Dict[str, Any]:
+    """Parses a database row into a memory dictionary, handling JSON fields."""
+    memory = dict(row)
+    try:
+        memory['openai_keywords'] = json.loads(memory.get('openai_keywords', '[]') or '[]')
+    except (json.JSONDecodeError, TypeError):
+        memory['openai_keywords'] = []
+    try:
+        memory['detected_objects'] = json.loads(memory.get('detected_objects', '[]') or '[]')
+    except (json.JSONDecodeError, TypeError):
+        memory['detected_objects'] = []
+    try:
+        # Load embedding separately if needed, but usually large
+        embedding_str = memory.get('resnet_embedding')
+        if embedding_str:
+            memory['resnet_embedding_vector'] = json.loads(embedding_str)
+        else:
+            memory['resnet_embedding_vector'] = None
+    except (json.JSONDecodeError, TypeError):
+         memory['resnet_embedding_vector'] = None
+    # Remove the raw embedding string from the default dict
+    memory.pop('resnet_embedding', None)
+    return memory
+
+def fetch_candidate_memories(conn: sqlite3.Connection, memory_type: str = 'all') -> List[Dict[str, Any]]:
+    """Fetches all memories of a specific type with necessary fields for ranking."""
+    memories = []
+    try:
+        cursor = conn.cursor()
+        sql = """
+            SELECT id, filename, original_path, processed_path, title, location, date, type,
+                   openai_keywords, openai_description, impact_weight, resnet_embedding, detected_objects
+            FROM memories
+        """
+        params = []
+        if memory_type != 'all':
+            sql += " WHERE type = ?"
+            params.append(memory_type)
+
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        memories = [parse_memory_row(row) for row in rows]
+        logger.info(f"Fetched {len(memories)} candidate memories of type '{memory_type}'.")
+    except sqlite3.Error as e:
+        logger.error(f"Error fetching candidate memories: {e}", exc_info=True)
+    return memories
+
+def calculate_keyword_score(memory: Dict[str, Any], query: str) -> float:
+    """Calculates a simple keyword matching score."""
+    score = 0.0
+    query_lower = query.lower()
+    # Check keywords (most important)
+    if any(query_lower in kw.lower() for kw in memory.get('openai_keywords', [])):
+        score += 0.5
+    # Check description
+    if query_lower in (memory.get('openai_description', '') or '').lower():
+        score += 0.3
+    # Check title
+    if query_lower in (memory.get('title', '') or '').lower():
+        score += 0.1
+    # Check location
+    if query_lower in (memory.get('location', '') or '').lower():
+        score += 0.1
+    # Check detected objects
+    if any(query_lower in obj.lower() for obj in memory.get('detected_objects', [])):
+        score += 0.2
+
+    return min(score, 1.0) # Cap score at 1.0
+
+
+# --- API Endpoints ---
 
 @router.get("/search", response_model=List[Memory])
 def search_memories_endpoint(
-    session_id: str,
-    query: str,
-    memory_type: str = 'all',  # 'all', 'user', or 'public'
-    limit: int = 30,
-    sort_by: str = "weight"
+    session_id: str = Query(..., description="Unique session identifier."),
+    query: str = Query(..., description="Search query text."),
+    memory_type: str = Query('all', description="Type of memories: 'all', 'user', or 'public'."),
+    limit: int = Query(30, description="Maximum number of results to return."),
+    sort_by: str = Query("relevance", description="Sort order: 'relevance', 'weight', 'date'.")
 ):
     """
-    Search memories based on query using both keyword matching and embedding similarity.
-    
-    Args:
-        session_id: Unique session identifier
-        query: Search term to find memories
-        memory_type: Type of memories to search ('all', 'user', or 'public')
-        limit: Maximum number of memories to return
-        sort_by: How to sort results ('weight', 'date', or 'relevance')
+    Searches memories using a combination of text query embedding similarity
+    and keyword matching. Ranks results based on combined relevance or other criteria.
     """
+    logger.info(f"Search request received for session '{session_id}': query='{query}', type='{memory_type}', limit={limit}, sort_by='{sort_by}'")
+
     session_manager = get_session_manager()
     paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    db_path = paths["db_path"]
-    
+    if not paths or "metadata" not in paths: # Check for metadata dir specifically
+        logger.error(f"Session '{session_id}' not found or metadata path missing.")
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found or invalid configuration.")
+
+    # Define the expected database path
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+
+    conn = get_db_connection(str(db_path))
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed.")
+
+    ranked_memories = []
     try:
-        # Get all memories of the specified types
-        if memory_type == 'all':
-            user_memories = get_memories_by_type('user', limit=100, db_path=db_path)
-            public_memories = get_memories_by_type('public', limit=100, db_path=db_path)
-            all_memories = user_memories + public_memories
-        else:
-            all_memories = get_memories_by_type(memory_type, limit=100, db_path=db_path)
-        
-        if not all_memories:
-            return []
-        
-        # Use recommendation engine to search memories with embeddings
-        memories = recommendation_engine.search_memories_by_embeddings(
-            query, 
-            all_memories, 
-            limit
-        )
-        
-        if not memories:
-            # No results from embedding search, try direct database search
-            memories = search_memories(query, memory_type, limit, db_path)
-        
-        # Apply additional sorting if needed
-        if sort_by == "date" and memories:
-            memories = sorted(
-                memories, 
+        # 1. Fetch all candidate memories from DB
+        candidate_memories = fetch_candidate_memories(conn, memory_type)
+        if not candidate_memories:
+            logger.info("No candidate memories found.")
+            return [] # Return empty list if no memories exist
+
+        # 2. Calculate Relevance Scores
+        query_embedding = None
+        if text_embedding_model:
+            try:
+                # Generate embedding for the text query
+                query_embedding = text_embedding_model.encode([query])[0]
+                logger.debug(f"Generated query embedding for '{query}'.")
+            except Exception as e:
+                logger.error(f"Failed to generate query embedding: {e}", exc_info=True)
+                # Continue without embedding search if model fails
+
+        # Score each memory
+        scored_memories = []
+        for mem in candidate_memories:
+            embedding_score = 0.0
+            keyword_score = 0.0
+            combined_score = 0.0
+
+            # Calculate embedding similarity score (if possible)
+            mem_embedding = mem.get('resnet_embedding_vector')
+            if query_embedding is not None and mem_embedding is not None:
+                try:
+                    # Ensure embeddings are numpy arrays of compatible shape
+                    q_emb = np.array(query_embedding).reshape(1, -1)
+                    m_emb = np.array(mem_embedding).reshape(1, -1)
+                    # Check if embedding dimensions match (ResNet50 is 2048, MiniLM is 384)
+                    # Direct comparison is problematic. A multi-modal model or mapping is ideal.
+                    # For now, we *cannot* directly compare MiniLM text embedding with ResNet image embedding.
+                    # We will rely more heavily on keyword search or assume a compatible embedding engine exists.
+                    # Placeholder: If a compatible embedding system were used:
+                    # similarity = cosine_similarity(q_emb, m_emb)[0][0]
+                    # embedding_score = max(0, similarity) # Ensure score is non-negative
+                    logger.warning(f"Direct comparison between text query embedding ({q_emb.shape}) and image embedding ({m_emb.shape}) for memory {mem['id']} is not meaningful with current models. Skipping embedding score.")
+                    embedding_score = 0.0 # Set to 0 as direct comparison isn't valid here
+                except Exception as e:
+                    logger.error(f"Error calculating similarity for memory {mem['id']}: {e}")
+                    embedding_score = 0.0
+            elif query_embedding is not None and mem_embedding is None:
+                 logger.warning(f"Memory {mem['id']} is missing ResNet embedding. Cannot calculate embedding score.")
+
+
+            # Calculate keyword matching score
+            keyword_score = calculate_keyword_score(mem, query)
+
+            # Combine scores (e.g., weighted average - adjust weights as needed)
+            # Giving more weight to keywords since embedding comparison is currently invalid
+            embedding_weight = 0.1 # Low weight due to incompatibility
+            keyword_weight = 0.9
+            combined_score = (embedding_score * embedding_weight) + (keyword_score * keyword_weight)
+
+            mem['relevance_score'] = combined_score
+            scored_memories.append(mem)
+            logger.debug(f"Memory ID {mem['id']}: EmbScore={embedding_score:.2f}, KeyScore={keyword_score:.2f}, Combined={combined_score:.2f}")
+
+
+        # 3. Sort Memories
+        if sort_by == "relevance":
+            # Sort by the combined score (descending)
+            ranked_memories = sorted(scored_memories, key=lambda m: m.get('relevance_score', 0.0), reverse=True)
+            logger.info(f"Sorting {len(scored_memories)} memories by relevance.")
+        elif sort_by == "weight":
+            # Sort by impact_weight (descending)
+            ranked_memories = sorted(scored_memories, key=lambda m: m.get('impact_weight', 1.0), reverse=True)
+            logger.info(f"Sorting {len(scored_memories)} memories by impact_weight.")
+        elif sort_by == "date":
+            # Sort by date (descending - newest first)
+            ranked_memories = sorted(
+                scored_memories,
                 key=lambda m: datetime.strptime(m.get('date', '1900-01-01'), '%Y-%m-%d'),
                 reverse=True
             )
-        elif sort_by == "weight" and memories:
-            memories = sorted(
-                memories, 
-                key=lambda m: float(m.get('weight', 1.0)),
-                reverse=True
-            )
-        
-        # Attach URLs for images
-        for memory in memories:
-            if 'filename' in memory and memory['filename']:
-                memory_type = memory.get('type', 'user')
-                memory['image_url'] = f"/api/static/{session_id}/{memory_type}/{memory['filename']}"
-        
-        return memories[:limit]
-    
-    except Exception as e:
-        logging.error(f"Error in search endpoint: {e}")
-        raise HTTPException(status_code=500, detail=f"Error searching memories: {str(e)}")
+            logger.info(f"Sorting {len(scored_memories)} memories by date.")
+        else:
+            # Default to relevance if sort_by is invalid
+            logger.warning(f"Invalid sort_by parameter '{sort_by}'. Defaulting to relevance.")
+            ranked_memories = sorted(scored_memories, key=lambda m: m.get('relevance_score', 0.0), reverse=True)
 
-@router.get("/similar/{memory_id}", response_model=List[Memory])
-def get_similar_memories(
-    session_id: str,
-    memory_id: int,
-    limit: int = 5,
-    memory_type: str = 'all',
-    use_embedding: bool = True
-):
-    """
-    Find memories similar to the specified memory.
-    
-    Args:
-        session_id: Unique session identifier
-        memory_id: ID of the source memory
-        limit: Maximum number of similar memories to return
-        memory_type: Type of memories to search ('all', 'user', or 'public')
-        use_embedding: Whether to use embedding-based similarity
-    """
-    session_manager = get_session_manager()
-    paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    db_path = paths["db_path"]
-    
-    # Get the source memory
-    source_memory = get_memory_by_id(memory_id, db_path)
-    
-    if not source_memory:
-        raise HTTPException(status_code=404, detail=f"Memory {memory_id} not found")
-    
-    # Get all memories of the specified types
-    if memory_type == 'all':
-        user_memories = get_memories_by_type('user', limit=100, db_path=db_path)
-        public_memories = get_memories_by_type('public', limit=100, db_path=db_path)
-        all_memories = user_memories + public_memories
-    else:
-        all_memories = get_memories_by_type(memory_type, limit=100, db_path=db_path)
-    
-    # Find similar memories using the recommendation engine
-    similar_memories = recommendation_engine.find_similar_memories(
-        source_memory, 
-        all_memories, 
-        top_n=limit
-    )
-    
-    # Attach URLs for images
-    for memory in similar_memories:
-        if 'filename' in memory and memory['filename']:
-            memory_type = memory.get('type', 'user')
-            memory['image_url'] = f"/api/static/{session_id}/{memory_type}/{memory['filename']}"
-    
-    return similar_memories
+
+        # 4. Apply Limit
+        final_memories = ranked_memories[:limit]
+        logger.info(f"Returning {len(final_memories)} memories after limit.")
+
+        # 5. Add Image URLs and Format Response
+        response_list = []
+        base_static_path = f"/api/static/{session_id}" # Define base path for static files
+        for mem in final_memories:
+            # Construct image URL relative to how static files are served
+            img_url = None
+            processed_rel_path = mem.get('processed_path') # e.g., "processed/user/user_0001_annotated.jpg"
+            if processed_rel_path:
+                 # Need to map processed_path to the static serving structure
+                 # Assuming static serving maps session_id/type/filename
+                 parts = Path(processed_rel_path).parts
+                 if len(parts) >= 2: # Should contain type and filename
+                      img_type_dir = parts[-2] # e.g., 'user'
+                      img_filename = parts[-1] # e.g., 'user_0001_annotated.jpg'
+                      img_url = f"{base_static_path}/{img_type_dir}/{img_filename}"
+                 else:
+                      logger.warning(f"Could not determine type/filename from processed_path: {processed_rel_path}")
+
+
+            # Create Memory object for the response (excludes embedding vector)
+            response_mem = Memory(
+                id=mem['id'],
+                filename=mem['filename'],
+                original_path=mem.get('original_path'),
+                processed_path=mem.get('processed_path'),
+                title=mem.get('title'),
+                location=mem.get('location'),
+                date=mem.get('date'),
+                type=mem['type'],
+                openai_keywords=mem.get('openai_keywords', []),
+                openai_description=mem.get('openai_description'),
+                impact_weight=mem.get('impact_weight', 1.0),
+                detected_objects=mem.get('detected_objects', []),
+                image_url=img_url,
+                relevance_score=mem.get('relevance_score')
+            )
+            response_list.append(response_mem)
+
+        return response_list
+
+    except Exception as e:
+        logger.error(f"Error during memory search for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred during search: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+            logger.debug("Database connection closed.")
+
 
 @router.get("/narrative", response_model=NarrativeResponse)
 def generate_narrative_endpoint(
-    session_id: str,
-    query: str, 
-    memory_type: str = 'all',
-    max_memories: int = 5,
-    prioritize_weights: bool = True
+    session_id: str = Query(..., description="Unique session identifier."),
+    query: str = Query(..., description="Original query used to find relevant memories."),
+    max_memories: int = Query(5, ge=1, le=10, description="Maximum number of top memories to use for the narrative."),
+    sort_by: str = Query("relevance", description="Criteria used to select top memories: 'relevance', 'weight', 'date'.")
 ):
     """
-    Generate a synthetic narrative from memories matching the query.
-    
-    Args:
-        session_id: Unique session identifier
-        query: Search term to find memories
-        memory_type: Type of memories to search ('all', 'user', or 'public')
-        max_memories: Maximum number of memories to include in the narrative
-        prioritize_weights: Whether to prioritize memory weight over chronology
+    Generates a short narrative based on the most relevant memories found for a query.
     """
-    session_manager = get_session_manager()
-    paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    db_path = paths["db_path"]
-    
+    logger.info(f"Narrative request received for session '{session_id}': query='{query}', max_memories={max_memories}, sort_by='{sort_by}'")
+
+    if not openai_client:
+        raise HTTPException(status_code=501, detail="Narrative generation unavailable: OpenAI client not configured.")
+
+    # 1. Perform search to get top N relevant memories
+    # We call the search logic internally. Limit might be slightly larger initially if needed.
     try:
-        # First search memories
-        if memory_type == 'all':
-            user_memories = get_memories_by_type('user', limit=100, db_path=db_path)
-            public_memories = get_memories_by_type('public', limit=100, db_path=db_path)
-            all_memories = user_memories + public_memories
-        else:
-            all_memories = get_memories_by_type(memory_type, limit=100, db_path=db_path)
-        
-        if not all_memories:
-            return {
-                "text": f"No memories found of type '{memory_type}'.",
-                "keywords": [],
-                "highlighted_terms": [],
-                "source_memories": []
-            }
-        
-        # Search memories using the recommendation engine
-        matching_memories = recommendation_engine.search_memories_by_embeddings(
-            query, 
-            all_memories, 
-            limit=max_memories*2
+        # Use the same search logic, limit to max_memories needed
+        top_memories_full = search_memories_endpoint(
+            session_id=session_id,
+            query=query,
+            memory_type='all', # Search all types for narrative context
+            limit=max_memories,
+            sort_by=sort_by
         )
-        
-        if not matching_memories:
-            return {
-                "text": f"No memories found related to '{query}'.",
-                "keywords": [],
-                "highlighted_terms": [],
-                "source_memories": []
-            }
-        
-        # Sort memories based on priority
-        if prioritize_weights:
-            # Sort by weight first
-            selected_memories = sorted(
-                matching_memories, 
-                key=lambda m: float(m.get('weight', 1.0)),
-                reverse=True
-            )[:max_memories]
-        else:
-            # Sort by date
-            selected_memories = sorted(
-                matching_memories,
-                key=lambda m: m.get('date', '1900-01-01')
-            )[:max_memories]
-            
-        # Generate narrative
-        memory_generator = get_synthetic_memory_generator()
-        narrative_result = memory_generator.generate_memory_narrative(selected_memories, query)
-        
-        # Prepare keywords with types
-        keywords = [
-            {"text": kw, "type": "primary"} for kw in narrative_result.get('keywords', [])
-        ]
-        
-        return {
-            "text": narrative_result.get('text', ''),
-            "keywords": keywords,
-            "highlighted_terms": narrative_result.get('highlighted_terms', []),
-            "source_memories": narrative_result.get('source_memories', [])
-        }
-        
+    except HTTPException as e:
+         # If search itself fails, re-raise the exception
+         logger.error(f"Search failed during narrative generation request: {e.detail}")
+         raise e
     except Exception as e:
-        logging.error(f"Error generating narrative: {e}")
-        raise HTTPException(status_code=500, detail=f"Error generating narrative: {str(e)}")
+         logger.error(f"Unexpected error during search for narrative: {e}", exc_info=True)
+         raise HTTPException(status_code=500, detail="Failed to retrieve memories for narrative.")
 
-@router.post("/{memory_id}/adjust_weight", response_model=WeightAdjustmentResponse)
-def adjust_memory_weight_endpoint(
-    session_id: str,
-    memory_id: int, 
-    adjustment: float = Query(0.1, ge=-1.0, le=1.0)
-):
-    """
-    Adjust the weight of a memory by the specified amount.
-    
-    Args:
-        session_id: Unique session identifier
-        memory_id: ID of the memory to adjust
-        adjustment: Amount to adjust the weight (positive or negative)
-    """
-    session_manager = get_session_manager()
-    paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    db_path = paths["db_path"]
-    
-    try:
-        # Get the current memory
-        memory = get_memory_by_id(memory_id, db_path)
-        
-        if not memory:
-            raise HTTPException(status_code=404, detail=f"Memory {memory_id} not found")
-        
-        current_weight = float(memory.get('weight', 1.0))
-        new_weight = current_weight + adjustment
-        
-        # Ensure weight stays within reasonable bounds
-        new_weight = max(0.1, min(5.0, new_weight))
-        
-        # Update the weight
-        success = update_memory_weight(memory_id, new_weight, db_path)
-        
-        if not success:
-            raise HTTPException(status_code=500, detail=f"Failed to update memory weight")
-        
-        return {
-            "status": "success", 
-            "message": f"Memory {memory_id} weight adjusted",
-            "previous_weight": current_weight,
-            "new_weight": new_weight
-        }
-    except sqlite3.Error as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-@router.post("/{memory_id}/increase_weight", response_model=WeightAdjustmentResponse)
-def increase_weight_memory(session_id: str, memory_id: int):
-    """Increase a memory's weight by 0.1."""
-    return adjust_memory_weight_endpoint(session_id, memory_id, 0.1)
-    
-@router.post("/{memory_id}/decrease_weight", response_model=WeightAdjustmentResponse)
-def decrease_weight_memory(session_id: str, memory_id: int):
-    """Decrease a memory's weight by 0.1."""
-    return adjust_memory_weight_endpoint(session_id, memory_id, -0.1)
-
-@router.get("/{memory_id}")
-def get_memory_endpoint(session_id: str, memory_id: int):
-    """
-    Get a memory by its ID.
-    
-    Args:
-        session_id: Unique session identifier
-        memory_id: ID of the memory to fetch
-    """
-    session_manager = get_session_manager()
-    paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    db_path = paths["db_path"]
-    
-    memory = get_memory_by_id(memory_id, db_path)
-    
-    if not memory:
-        raise HTTPException(status_code=404, detail=f"Memory {memory_id} not found")
-    
-    # Attach URL for image
-    if 'filename' in memory and memory['filename']:
-        memory_type = memory.get('type', 'user')
-        memory['image_url'] = f"/api/static/{session_id}/{memory_type}/{memory['filename']}"
-    
-    return memory
-
-# Utility functions
-def get_memory_by_id(memory_id, db_path):
-    """Get a memory by its ID."""
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT * FROM memories WHERE id = ?", (memory_id,))
-        memory = cursor.fetchone()
-        
-        if memory:
-            memory = dict(memory)
-            memory['keywords'] = json.loads(memory['keywords']) if memory['keywords'] else []
-            
-            if 'resnet_embedding' in memory and memory['resnet_embedding']:
-                try:
-                    memory['embedding_vector'] = json.loads(memory['resnet_embedding'])
-                except json.JSONDecodeError:
-                    memory['embedding_vector'] = []
-            else:
-                memory['embedding_vector'] = []
-                
-            if 'detected_objects' in memory and memory['detected_objects']:
-                try:
-                    memory['detected_objects_list'] = json.loads(memory['detected_objects'])
-                except json.JSONDecodeError:
-                    memory['detected_objects_list'] = []
-        
-        return memory
-        
-    except Exception as e:
-        logging.error(f"Error fetching memory {memory_id}: {e}")
-        return None
-        
-    finally:
-        if 'conn' in locals():
-            conn.close()
-
-def update_memory_weight(memory_id, new_weight, db_path):
-    """Update a memory's weight."""
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        # Update both weight fields for compatibility
-        cursor.execute(
-            "UPDATE memories SET weight = ?, impact_weight = ? WHERE id = ?",
-            (new_weight, new_weight, memory_id)
+    if not top_memories_full:
+        logger.warning(f"No memories found for query '{query}' in session '{session_id}' to generate narrative.")
+        # Return a default response indicating no memories found
+        return NarrativeResponse(
+            session_id=session_id,
+            narrative_text=f"I couldn't find any memories related to '{query}' to create a narrative.",
+            source_memory_ids=[],
+            query=query
         )
-        
-        conn.commit()
-        updated = cursor.rowcount > 0
-        
-        return updated
-        
-    except Exception as e:
-        logging.error(f"Error updating memory weight: {e}")
-        return False
-        
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
-def get_memories_by_type(memory_type, limit=100, db_path='memories.db'):
-    """Get memories by type."""
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        if memory_type == 'all':
-            cursor.execute("SELECT * FROM memories LIMIT ?", (limit,))
-        else:
-            cursor.execute("SELECT * FROM memories WHERE type = ? LIMIT ?", (memory_type, limit))
-            
-        memories = [dict(row) for row in cursor.fetchall()]
-        
-        # Parse JSON fields
-        for memory in memories:
-            memory['keywords'] = json.loads(memory['keywords']) if memory['keywords'] else []
-            
-            if 'resnet_embedding' in memory and memory['resnet_embedding']:
-                try:
-                    memory['embedding_vector'] = json.loads(memory['resnet_embedding'])
-                except json.JSONDecodeError:
-                    memory['embedding_vector'] = []
-            else:
-                memory['embedding_vector'] = []
-        
-        return memories
-        
-    except Exception as e:
-        logging.error(f"Error fetching memories by type: {e}")
-        return []
-        
-    finally:
-        if 'conn' in locals():
-            conn.close()
+    # Convert Pydantic models back to simple dicts for processing if needed, or access attributes directly
+    top_memories = [mem.model_dump() for mem in top_memories_full] # Use model_dump for Pydantic v2
 
-def search_memories(query, memory_type='all', limit=30, db_path='memories.db'):
-    """
-    Basic text search for memories using SQL LIKE queries.
-    
-    Args:
-        query: Search term to find memories
-        memory_type: Type of memories to search ('all', 'user', or 'public')
-        limit: Maximum number of memories to return
-        db_path: Path to the SQLite database
-        
-    Returns:
-        list: List of memory dictionaries matching the search criteria
-    """
-    # Check if database exists
-    if not os.path.exists(db_path):
-        logging.error(f"No database found at {db_path}")
-        return []
-    
+    # 2. Prepare context for OpenAI
+    narrative_context = f"Original Query: {query}\n\nKey Memories:\n"
+    source_ids = []
+    for i, mem in enumerate(top_memories):
+        source_ids.append(mem['id'])
+        narrative_context += f"\nMemory {i+1} (ID: {mem['id']}, Date: {mem.get('date', 'N/A')}, Location: {mem.get('location', 'N/A')}, Weight: {mem.get('impact_weight', 1.0):.1f}):\n"
+        narrative_context += f"- Keywords: {', '.join(mem.get('openai_keywords', []))}\n"
+        narrative_context += f"- Description: {mem.get('openai_description', 'N/A')}\n"
+        narrative_context += f"- Detected Objects: {', '.join(mem.get('detected_objects', []))}\n"
+
+    # 3. Create OpenAI Prompt
+    prompt = f"""
+You are a creative storyteller. Based on the following memories retrieved for the query '{query}', weave a short, engaging narrative (2-4 sentences). The narrative should connect the memories thematically if possible, reflecting the mood suggested by the keywords and descriptions. Focus on the essence of the memories provided.
+
+{narrative_context}
+
+Generate the narrative:
+"""
+
+    # 4. Call OpenAI API
     try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        # Search across multiple fields
-        if memory_type == 'all':
-            cursor.execute(
-                """
-                SELECT * FROM memories 
-                WHERE (
-                    title LIKE ? OR 
-                    location LIKE ? OR 
-                    description LIKE ? OR
-                    keywords LIKE ?
-                ) 
-                ORDER BY weight DESC 
-                LIMIT ?
-                """, 
-                (
-                    f"%{query}%", 
-                    f"%{query}%", 
-                    f"%{query}%", 
-                    f"%{query}%", 
-                    limit
-                )
-            )
-        else:
-            cursor.execute(
-                """
-                SELECT * FROM memories 
-                WHERE type = ? AND (
-                    title LIKE ? OR 
-                    location LIKE ? OR 
-                    description LIKE ? OR
-                    keywords LIKE ?
-                ) 
-                ORDER BY weight DESC 
-                LIMIT ?
-                """, 
-                (
-                    memory_type, 
-                    f"%{query}%", 
-                    f"%{query}%", 
-                    f"%{query}%", 
-                    f"%{query}%", 
-                    limit
-                )
-            )
-        
-        # Convert results to list of dictionaries
-        memories = [dict(row) for row in cursor.fetchall()]
-        
-        # Parse JSON fields
-        for memory in memories:
-            memory['keywords'] = json.loads(memory['keywords']) if memory['keywords'] else []
-        
-        return memories
-        
+        logger.debug("Sending request to OpenAI for narrative generation...")
+        completion = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo", # Use a cost-effective model for short narratives
+            messages=[
+                {"role": "system", "content": "You are a creative storyteller."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150, # Limit response length
+            temperature=0.7 # Balance creativity and coherence
+        )
+        narrative_text = completion.choices[0].message.content.strip()
+        logger.info(f"Narrative generated successfully for query '{query}'.")
+
     except Exception as e:
-        logging.error(f"Error searching memories: {e}")
-        return []
-        
-    finally:
-        if 'conn' in locals():
-            conn.close()
+        logger.error(f"OpenAI API call failed during narrative generation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate narrative due to AI service error.")
+
+    # 5. Return Response
+    return NarrativeResponse(
+        session_id=session_id,
+        narrative_text=narrative_text,
+        source_memory_ids=source_ids,
+        query=query
+    )
+
+
+# Include this router in your main FastAPI application
+# Example main.py:
+# from fastapi import FastAPI
+# from app.api import memories # Assuming this file is app/api/memories.py
+#
+# app = FastAPI()
+# app.include_router(memories.router, prefix="/api/memories", tags=["memories"])

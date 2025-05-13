@@ -1,254 +1,930 @@
-from fastapi import APIRouter, HTTPException, File, UploadFile, Form, BackgroundTasks, Depends, Query
-from pydantic import BaseModel  # Add this import for the ProcessRequest model
-from typing import List, Optional
+# Standard Library Imports
 import os
+import json
 import shutil
 import logging
+import base64
+import sqlite3
 from pathlib import Path
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+# Third-Party Imports
+# FastAPI and related
+# Add BackgroundTasks back
+from fastapi import APIRouter, HTTPException, File, UploadFile, Query, Depends, BackgroundTasks
+from pydantic import BaseModel
+
+# File Handling
 import aiofiles
-import asyncio
 
-from app.core.session import get_session_manager
-from app.services.process_data import DataProcessor
-from app.services.web_scraper import LocationImageScraper
+# Image Processing & ML
+from PIL import Image
+from PIL.ExifTags import TAGS
+import cv2 # OpenCV for image annotation
+import torch
+import torchvision.models as models
+import torchvision.transforms as T
+import numpy as np
+from tqdm import tqdm # Progress bars
 
-# Configure router
-router = APIRouter()
+# Geolocation
+from geopy.geocoders import Nominatim
 
-# Setup logging
+# OpenAI
+from openai import OpenAI
+from dotenv import load_dotenv
+
+# YOLO (Optional Object Detection)
+try:
+    from ultralytics import YOLO
+    YOLO_AVAILABLE = True
+    logging.info("Ultralytics YOLO found and available.")
+except ImportError:
+    YOLO_AVAILABLE = False
+    logging.warning("Ultralytics (YOLO) not found. Install with 'pip install ultralytics'. Object detection features will be disabled.")
+
+# --- Application-Specific Imports ---
+# Adjust these paths based on your project structure
+try:
+    from app.core.session import get_session_manager, SessionManager
+except ImportError:
+    logging.error("Failed to import session manager from app.core.session. Using dummy.")
+    # Dummy Session Manager for structure - Replace with your actual implementation
+    class SessionManager:
+        def get_session_paths(self, session_id: str) -> Optional[Dict[str, str]]: return None
+        def add_location(self, session_id: str, location: str): pass
+    _dummy_session_manager = SessionManager()
+    def get_session_manager(): return _dummy_session_manager
+
+# --- Configuration ---
+load_dotenv()
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s: %(message)s',
+    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s',
     handlers=[
-        logging.FileHandler('logs/upload.log', mode='a'),
+        logging.FileHandler('logs/upload_processing.log', mode='a'),
         logging.StreamHandler()
     ]
 )
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
-# Create a model for the process request
+# --- DataProcessor Class ---
+# (Keep the full DataProcessor class definition here as before, or import it)
+# NOTE: Ensure the DataProcessor class definition from the previous version is included here.
+# For brevity in this example, I'll assume it's defined above or imported correctly.
+# Placeholder if it's not defined above:
+class DataProcessor:
+    """Handles image processing, metadata extraction, AI analysis, and database storage."""
+    def __init__(self, raw_user_dir, raw_public_dir, processed_user_dir, processed_public_dir, metadata_dir, yolo_model_name='yolov8n.pt'):
+        logger.info("Initializing DataProcessor...")
+        # Set up directories
+        self.raw_user_dir = Path(raw_user_dir)
+        self.raw_public_dir = Path(raw_public_dir)
+        self.processed_user_dir = Path(processed_user_dir)
+        self.processed_public_dir = Path(processed_public_dir)
+        self.metadata_dir = Path(metadata_dir)
+
+        # Ensure output directories exist
+        for dir_path in [self.processed_user_dir, self.processed_public_dir, self.metadata_dir]:
+            os.makedirs(dir_path, exist_ok=True)
+            logger.debug(f"Ensured directory exists: {dir_path}")
+
+        # Initialize OpenAI client
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.client = None
+        if openai_api_key:
+            try:
+                self.client = OpenAI(api_key=openai_api_key)
+                logger.info("OpenAI client initialized successfully.")
+            except Exception as e:
+                logger.error(f"Failed to initialize OpenAI client: {e}")
+        else:
+            logger.warning("OPENAI_API_KEY not found in environment variables. OpenAI analysis will be skipped.")
+
+        # Initialize geocoder
+        try:
+            self.geolocator = Nominatim(user_agent="memory_cartography_app_v1") # Use a specific user agent
+            logger.info("Nominatim geolocator initialized.")
+        except Exception as e:
+            logger.error(f"Failed to initialize Nominatim geolocator: {e}")
+            self.geolocator = None
+
+        # Initialize ResNet and YOLO models
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"Using device for ML models: {self.device}")
+        self.resnet_model = None
+        self.resnet_transform = None
+        self.yolo_model = None
+        self._initialize_models(yolo_model_name)
+        logger.info("DataProcessor initialization complete.")
+
+    def _initialize_models(self, yolo_model_name):
+        # Initialize ResNet50
+        try:
+            logger.debug("Initializing ResNet50 model...")
+            # Use weights=... instead of pretrained=True for newer torchvision
+            self.resnet_model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
+            # Remove the final fully connected layer to get features
+            self.resnet_model = torch.nn.Sequential(*list(self.resnet_model.children())[:-1])
+            self.resnet_model.eval() # Set to evaluation mode
+            self.resnet_model.to(self.device)
+            # Define ResNet transformations matching the pre-trained model
+            self.resnet_transform = T.Compose([
+                T.Resize(256),
+                T.CenterCrop(224),
+                T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+            logger.info("ResNet50 model initialized successfully.")
+        except Exception as e:
+            logger.error(f"Failed to initialize ResNet50 model: {e}", exc_info=True)
+            self.resnet_model = None
+
+        # Initialize YOLO
+        if YOLO_AVAILABLE:
+            try:
+                logger.debug(f"Initializing YOLO model ({yolo_model_name})...")
+                self.yolo_model = YOLO(yolo_model_name)
+                # self.yolo_model.to(self.device) # YOLO typically handles device placement internally
+                logger.info(f"YOLO model ({yolo_model_name}) initialized successfully.")
+            except Exception as e:
+                logger.error(f"Failed to initialize YOLO model ({yolo_model_name}): {e}", exc_info=True)
+                self.yolo_model = None
+        else:
+            self.yolo_model = None
+            logger.warning("YOLO model could not be initialized because ultralytics is not available.")
+
+    def find_image_files(self, source_dir: Path) -> List[Path]:
+        """Finds all supported image files recursively in a directory."""
+        image_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+        image_paths = []
+        logger.info(f"Searching for image files in: {source_dir}")
+        if not source_dir.is_dir():
+            logger.warning(f"Source directory does not exist or is not a directory: {source_dir}")
+            return []
+        for ext in image_extensions:
+            image_paths.extend(source_dir.rglob(f'*{ext.lower()}'))
+            image_paths.extend(source_dir.rglob(f'*{ext.upper()}')) # Include uppercase extensions
+
+        # Filter out hidden files and ensure they are files
+        valid_image_paths = [p for p in image_paths if p.is_file() and not p.name.startswith('.')]
+        unique_paths = sorted(list(set(valid_image_paths)))
+        logger.info(f"Found {len(unique_paths)} unique image files.")
+        return unique_paths
+
+    def extract_image_metadata(self, image_path: Path) -> tuple[str, str]:
+        """Extracts location and date from image EXIF data or uses fallbacks."""
+        location = "Unknown Location"
+        date = datetime.now().strftime('%Y-%m-%d') # Default to current date
+
+        try:
+            img = Image.open(image_path)
+            exif_data_raw = img._getexif()
+
+            if exif_data_raw:
+                exif_data = {TAGS.get(key, key): value for key, value in exif_data_raw.items()}
+
+                # Extract Date
+                date_tags = ['DateTimeOriginal', 'DateTime', 'DateTimeDigitized']
+                for tag in date_tags:
+                    if tag in exif_data:
+                        try:
+                            date_str = str(exif_data[tag])
+                            # Basic parsing, might need refinement for different formats
+                            date_obj = datetime.strptime(date_str.split(" ")[0], '%Y:%m:%d')
+                            date = date_obj.strftime('%Y-%m-%d')
+                            logger.debug(f"Extracted date {date} from tag {tag} for {image_path.name}")
+                            break # Use the first valid date found
+                        except (ValueError, TypeError, IndexError):
+                            continue # Try next tag if parsing fails
+
+                # Extract GPS Location and geocode
+                gps_info = exif_data.get('GPSInfo')
+                if gps_info and self.geolocator:
+                    try:
+                        # Convert GPS EXIF data to decimal degrees
+                        def get_decimal_from_dms(dms, ref):
+                            degrees, minutes, seconds = dms
+                            decimal = degrees + (minutes / 60.0) + (seconds / 3600.0)
+                            if ref in ['S', 'W']:
+                                decimal *= -1
+                            return decimal
+
+                        lat_dms = gps_info.get(2) # GPSLatitude
+                        lat_ref = gps_info.get(1) # GPSLatitudeRef
+                        lon_dms = gps_info.get(4) # GPSLongitude
+                        lon_ref = gps_info.get(3) # GPSLongitudeRef
+
+                        if lat_dms and lat_ref and lon_dms and lon_ref:
+                            latitude = get_decimal_from_dms(lat_dms, lat_ref)
+                            longitude = get_decimal_from_dms(lon_dms, lon_ref)
+                            logger.debug(f"Extracted GPS coordinates ({latitude}, {longitude}) for {image_path.name}")
+
+                            # Reverse geocode coordinates
+                            geo_location = self.geolocator.reverse((latitude, longitude), exactly_one=True, timeout=10)
+                            if geo_location:
+                                location = geo_location.address
+                                logger.debug(f"Geocoded location: {location}")
+                            else:
+                                logger.warning(f"Could not reverse geocode coordinates for {image_path.name}")
+                        else:
+                            logger.debug(f"Incomplete GPSInfo found for {image_path.name}")
+                    except Exception as e:
+                        logger.error(f"Error processing GPS data or geocoding for {image_path.name}: {e}")
+
+            # Fallback: Use parent directory name if location is still unknown
+            if location == "Unknown Location":
+                parent_folder = image_path.parent.name
+                # Basic check to avoid using top-level dir name like 'raw_user'
+                if parent_folder != self.raw_user_dir.name and parent_folder != self.raw_public_dir.name:
+                    location = parent_folder.replace('_', ' ').title()
+                    logger.debug(f"Using parent folder name as fallback location: {location}")
+
+        except Exception as e:
+            logger.error(f"Error extracting metadata for {image_path.name}: {e}", exc_info=True)
+
+        return location, date
+
+    def analyze_image_emotional_intensity(self, image_path: Path) -> tuple[List[str], str, float]:
+        """Analyzes image using OpenAI Vision API for keywords, description, and impact."""
+        if not self.client:
+            logger.warning(f"OpenAI client not available. Skipping analysis for {image_path.name}.")
+            return ["no_openai"], "OpenAI analysis skipped.", 1.0
+
+        logger.debug(f"Starting OpenAI analysis for {image_path.name}...")
+        try:
+            # Read image and encode as base64
+            with open(image_path, "rb") as image_file:
+                base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+            response = self.client.chat.completions.create(
+                model="gpt-4o", # Or "gpt-4-vision-preview", "gpt-4-turbo"
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are an expert image analyst specializing in emotional context. Analyze the provided image.
+                        Return ONLY a valid JSON object with three keys:
+                        1. 'keywords': A list of 3-5 single-word strings capturing the core emotions, atmosphere, or significant themes (e.g., ["joyful", "serene", "urban", "nostalgia", "adventure"]).
+                        2. 'description': A concise one-sentence description (max 25 words) summarizing the emotional essence or narrative of the scene.
+                        3. 'impact_score': A float between 0.2 (low emotional impact, mundane) and 2.0 (high emotional impact, very evocative or intense).
+                        Example JSON: {"keywords": ["serene", "nature", "calm"], "description": "A peaceful forest path invites quiet contemplation.", "impact_score": 1.3}"""
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Analyze this image and provide the JSON output as instructed."},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                        ]
+                    }
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=300, # Adjust as needed
+                temperature=0.5 # Control creativity/randomness
+            )
+
+            # Extract and validate the result
+            result_json = response.choices[0].message.content
+            result = json.loads(result_json)
+
+            keywords = result.get('keywords', ["analysis_error"])
+            description = result.get('description', "Analysis failed or format error.")
+            weight = float(result.get('impact_score', 1.0))
+            weight = max(0.2, min(2.0, weight)) # Clamp score to the defined range
+
+            logger.info(f"OpenAI analysis successful for {image_path.name}. Impact: {weight}")
+            return keywords, description, weight
+
+        except json.JSONDecodeError as e:
+             logger.error(f"OpenAI analysis failed for {image_path.name} - Invalid JSON received: {result_json}. Error: {e}")
+             return ["json_error"], "Failed to parse OpenAI response.", 1.0
+        except Exception as e:
+            logger.error(f"OpenAI analysis failed for {image_path.name}: {e}", exc_info=True)
+            return ["api_error"], "OpenAI API call failed.", 1.0
+
+    def extract_resnet_features(self, image_path: Path) -> Optional[List[float]]:
+        """Extracts visual features using the pre-trained ResNet model."""
+        if not self.resnet_model or not self.resnet_transform:
+            logger.warning(f"ResNet model not available. Skipping feature extraction for {image_path.name}.")
+            return None
+        try:
+            logger.debug(f"Extracting ResNet features for {image_path.name}...")
+            img = Image.open(image_path).convert('RGB') # Ensure image is RGB
+            transformed_img = self.resnet_transform(img).unsqueeze(0).to(self.device) # Add batch dim and send to device
+
+            with torch.no_grad(): # Disable gradient calculation for inference
+                features = self.resnet_model(transformed_img) # Forward pass
+
+            # Features are output of the layer before FC, shape (1, 2048, 1, 1) for ResNet50
+            # Flatten and convert to list
+            embedding = features.squeeze().cpu().numpy().tolist() # Squeeze dims, move to CPU, convert to numpy, then list
+            logger.debug(f"ResNet feature extraction successful for {image_path.name}. Embedding size: {len(embedding)}")
+            return embedding
+        except Exception as e:
+            logger.error(f"ResNet feature extraction failed for {image_path.name}: {e}", exc_info=True)
+            return None
+
+    def detect_objects_yolo(self, image_path: Path) -> List[Dict[str, Any]]:
+        """Detects objects using YOLO model and returns detection info."""
+        if not self.yolo_model:
+            logger.warning(f"YOLO model not available. Skipping object detection for {image_path.name}.")
+            return []
+
+        try:
+            logger.debug(f"Running YOLO object detection for {image_path.name}...")
+            # Perform detection
+            results = self.yolo_model(image_path, verbose=False) # verbose=False reduces console spam
+
+            detected_objects_info = []
+            # Process results (structure might vary slightly based on ultralytics version)
+            if results and results[0].boxes:
+                boxes = results[0].boxes.xyxy.cpu().numpy()  # Bounding boxes (x1, y1, x2, y2)
+                confs = results[0].boxes.conf.cpu().numpy()  # Confidences
+                clss = results[0].boxes.cls.cpu().numpy()    # Class IDs
+                names = results[0].names # Class names mapping (dict: id -> name)
+
+                for i in range(len(boxes)):
+                    class_id = int(clss[i])
+                    detected_objects_info.append({
+                        "box": boxes[i].tolist(), # [x1, y1, x2, y2]
+                        "confidence": float(confs[i]),
+                        "class_id": class_id,
+                        "class_name": names[class_id] # Get name from mapping
+                    })
+                logger.info(f"YOLO detected {len(detected_objects_info)} objects in {image_path.name}.")
+            else:
+                logger.info(f"No objects detected by YOLO in {image_path.name}.")
+
+            return detected_objects_info
+        except Exception as e:
+            logger.error(f"YOLO object detection failed for {image_path.name}: {e}", exc_info=True)
+            return [] # Return empty list on error
+
+    def annotate_image_with_detections(self, original_image_path: Path, detections: List[Dict[str, Any]], output_path: Path):
+        """Draws bounding boxes on the image based on YOLO detections and saves it."""
+        if not detections: # No detections or YOLO failed/skipped
+            logger.debug(f"No detections to annotate for {original_image_path.name}. Copying original to {output_path}.")
+            try:
+                shutil.copy2(original_image_path, output_path) # Copy original if no annotations
+            except Exception as e:
+                logger.error(f"Failed to copy original image {original_image_path} to {output_path}: {e}")
+            return
+
+        try:
+            logger.debug(f"Annotating image {original_image_path.name} with {len(detections)} detections...")
+            # Read image using OpenCV
+            img_cv = cv2.imread(str(original_image_path))
+            if img_cv is None:
+                logger.error(f"Failed to read image {original_image_path} with OpenCV. Cannot annotate.")
+                shutil.copy2(original_image_path, output_path) # Fallback to copy
+                return
+
+            # Draw boxes and labels
+            for det in detections:
+                box = det["box"]
+                label = f"{det['class_name']}: {det['confidence']:.2f}"
+                x1, y1, x2, y2 = map(int, box) # Convert coordinates to integers
+
+                # Draw bounding box (Green color, thickness 2)
+                cv2.rectangle(img_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # Put label text above the box
+                cv2.putText(img_cv, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+            # Save the annotated image
+            success = cv2.imwrite(str(output_path), img_cv)
+            if success:
+                logger.info(f"Annotated image saved successfully to {output_path}")
+            else:
+                 logger.error(f"Failed to save annotated image to {output_path}")
+                 # Optionally copy original as fallback if save fails
+                 # shutil.copy2(original_image_path, output_path)
+
+        except Exception as e:
+            logger.error(f"Failed to annotate image {original_image_path.name}: {e}. Copying original instead.", exc_info=True)
+            try:
+                shutil.copy2(original_image_path, output_path) # Fallback copy
+            except Exception as copy_e:
+                logger.error(f"Fallback copy also failed for {original_image_path}: {copy_e}")
+
+    def process_images(self, source_dir: Path, output_dir: Path, prefix: str) -> Dict[str, Dict[str, Any]]:
+        """Processes all images in source_dir, extracts metadata/features, saves annotated images, and returns metadata."""
+        image_paths = self.find_image_files(source_dir)
+        logger.info(f"Starting processing for {len(image_paths)} images from {source_dir} with prefix '{prefix}'...")
+        all_metadata = {}
+
+        if not image_paths:
+            logger.warning(f"No images found in {source_dir} to process.")
+            return {}
+
+        # Use tqdm for progress bar
+        for idx, img_path in enumerate(tqdm(image_paths, desc=f"Processing {prefix} images", unit="image")):
+            logger.info(f"Processing image {idx+1}/{len(image_paths)}: {img_path.name}")
+            try:
+                # Define new filename for the processed (annotated) image
+                new_filename_stem = f"{prefix}_{idx+1:04d}" # e.g., user_0001
+                original_suffix = img_path.suffix.lower()
+                # Standardize to .jpg for consistency, or keep original if common type
+                if original_suffix == '.jpeg':
+                    new_suffix = '.jpg'
+                elif original_suffix not in ['.jpg', '.png', '.webp']:
+                    logger.warning(f"Image {img_path.name} has uncommon suffix {original_suffix}. Will attempt to save as .jpg.")
+                    new_suffix = '.jpg'
+                else:
+                    new_suffix = original_suffix
+
+                annotated_filename = f"{new_filename_stem}_annotated{new_suffix}"
+                annotated_image_path = output_dir / annotated_filename
+
+                # --- Perform processing steps ---
+                # 1. Extract EXIF metadata (Location, Date)
+                location, date = self.extract_image_metadata(img_path)
+
+                # 2. Analyze emotional intensity with OpenAI (if available)
+                keywords, description, weight = ["default"], "No description", 1.0
+                if self.client:
+                    keywords, description, weight = self.analyze_image_emotional_intensity(img_path)
+
+                # 3. Extract ResNet features (visual embeddings)
+                resnet_embedding = self.extract_resnet_features(img_path)
+
+                # 4. Perform YOLO object detection (if available)
+                yolo_detections = self.detect_objects_yolo(img_path)
+                detected_object_names = [det["class_name"] for det in yolo_detections] # Get just the names
+
+                # 5. Annotate and save the image (copies if no detections)
+                self.annotate_image_with_detections(img_path, yolo_detections, annotated_image_path)
+
+                # --- Assemble Metadata ---
+                # Add primary location part to keywords if relevant and not already covered
+                if location != "Unknown Location":
+                    primary_location = location.split(',')[0].strip()
+                    # Check if location is implicitly covered by keywords/description
+                    loc_in_keywords = any(primary_location.lower() in k.lower() for k in keywords)
+                    loc_in_desc = primary_location.lower() in description.lower()
+                    if not loc_in_keywords and not loc_in_desc:
+                        keywords.append(f"{primary_location} (location)")
+                        logger.debug(f"Added location '{primary_location}' to keywords for {img_path.name}")
+
+
+                # Store metadata using the ANNOTATED filename as the key
+                # Construct relative path for processed_path based on a common root (e.g., session dir parent)
+                # This assumes metadata_dir is inside the session directory structure
+                try:
+                    base_path_for_relative = self.metadata_dir.parent # Assumes metadata is one level down
+                    relative_processed_path = str(annotated_image_path.relative_to(base_path_for_relative))
+                except ValueError:
+                    logger.warning(f"Could not make processed path relative: {annotated_image_path}. Storing absolute path.")
+                    relative_processed_path = str(annotated_image_path)
+
+
+                metadata_entry = {
+                    'original_path': str(img_path), # Keep track of the original file
+                    'processed_path': relative_processed_path, # Relative path for frontend?
+                    'location': location,
+                    'date': date,
+                    'openai_keywords': keywords,
+                    'openai_description': description,
+                    'impact_weight': weight,
+                    'resnet_embedding': resnet_embedding, # Can be None if failed
+                    'detected_objects': detected_object_names # List of strings
+                }
+                all_metadata[annotated_filename] = metadata_entry
+                logger.info(f"Successfully processed and gathered metadata for {img_path.name} -> {annotated_filename}")
+
+            except Exception as e:
+                logger.error(f"CRITICAL ERROR processing image {img_path.name}: {e}", exc_info=True)
+                # Optionally add a placeholder entry for failed images
+                # all_metadata[f"{prefix}_failed_{idx+1:04d}.error"] = {'original_path': str(img_path), 'error': str(e)}
+
+        logger.info(f"Finished processing {len(all_metadata)} images for prefix '{prefix}'.")
+        return all_metadata
+
+    def create_sqlite_database(self, db_path: Path, user_metadata: Dict, public_metadata: Dict):
+        """Creates or updates an SQLite database with the processed metadata."""
+        logger.info(f"Updating SQLite database at: {db_path}")
+        db_path.parent.mkdir(parents=True, exist_ok=True) # Ensure directory exists
+        conn = None
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            # Create table if it doesn't exist - includes all fields
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS memories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT NOT NULL UNIQUE,       -- Annotated image filename (e.g., user_0001_annotated.jpg)
+                original_path TEXT,                 -- Path to the original uploaded file
+                processed_path TEXT,                -- Relative path to the processed/annotated file
+                title TEXT,                         -- Auto-generated title (e.g., "Location - Date")
+                location TEXT,
+                date TEXT,
+                type TEXT NOT NULL,                 -- 'user' or 'public'
+                openai_keywords TEXT,               -- JSON string list from OpenAI
+                openai_description TEXT,
+                impact_weight REAL DEFAULT 1.0,
+                resnet_embedding TEXT,              -- JSON string of list/vector (can be large)
+                detected_objects TEXT               -- JSON string list of object names
+            )
+            ''')
+            logger.debug("Database table 'memories' ensured to exist.")
+
+            # --- Insert/Update Data ---
+            def insert_metadata(metadata_dict: Dict, memory_type: str):
+                logger.debug(f"Inserting/updating metadata for type '{memory_type}'...")
+                inserted_count = 0
+                updated_count = 0
+                failed_count = 0
+                for filename_key, data in tqdm(metadata_dict.items(), desc=f"Updating DB ({memory_type})", unit="entry"):
+                    try:
+                        # Use annotated filename as the unique key in the DB
+                        title = f"{data.get('location', 'N/A')} - {data.get('date', 'N/A')}"
+
+                        # Convert lists/embeddings to JSON strings for storage
+                        keywords_json = json.dumps(data.get('openai_keywords', []))
+                        embedding_json = json.dumps(data.get('resnet_embedding')) # Will be 'null' if None
+                        objects_json = json.dumps(data.get('detected_objects', []))
+
+                        # Use INSERT OR REPLACE to handle updates based on unique filename
+                        cursor.execute(
+                            '''
+                            INSERT OR REPLACE INTO memories
+                            (filename, original_path, processed_path, title, location, date, type, openai_keywords, openai_description, impact_weight, resnet_embedding, detected_objects)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''',
+                            (
+                                filename_key, # The annotated filename (e.g., user_0001_annotated.jpg)
+                                data.get('original_path'),
+                                data.get('processed_path'),
+                                title,
+                                data.get('location', 'Unknown Location'),
+                                data.get('date', 'Unknown Date'),
+                                memory_type,
+                                keywords_json,
+                                data.get('openai_description', ''),
+                                data.get('impact_weight', 1.0),
+                                embedding_json,
+                                objects_json
+                            )
+                        )
+                        # Check if insert or replace occurred (optional, requires checking changes)
+                        if cursor.rowcount > 0:
+                             # This doesn't easily distinguish insert vs replace in standard sqlite3
+                             # Assume success means inserted or replaced
+                             inserted_count += 1 # Count successful operations
+                        else:
+                             # Should not happen with INSERT OR REPLACE unless error
+                             logger.warning(f"No rows affected for {filename_key}, potentially unexpected.")
+                             failed_count +=1
+
+
+                    except sqlite3.Error as e:
+                        logger.error(f"SQLite error inserting/replacing {filename_key} ({memory_type}): {e}")
+                        failed_count += 1
+                    except Exception as e:
+                        logger.error(f"Unexpected error processing DB entry for {filename_key} ({memory_type}): {e}")
+                        failed_count += 1
+
+                logger.info(f"Finished DB update for '{memory_type}'. Success: {inserted_count}, Failed: {failed_count}.")
+
+            # Insert user and public metadata
+            insert_metadata(user_metadata, 'user')
+            insert_metadata(public_metadata, 'public') # Will do nothing if public_metadata is empty
+
+            conn.commit() # Commit changes
+            logger.info(f"Database {db_path} updated successfully.")
+
+        except sqlite3.Error as e:
+            logger.error(f"Failed to connect to or operate on database {db_path}: {e}", exc_info=True)
+        finally:
+            if conn:
+                conn.close() # Ensure connection is closed
+
+
+# --- FastAPI Models ---
 class ProcessRequest(BaseModel):
     session_id: str
 
-@router.post("/photos")
-async def upload_photos(
-    session_id: str = Query(...),  # Changed from Form to Query
-    files: List[UploadFile] = File(...)
-):
-    """
-    Upload user photos for processing in a temporary session.
-    
-    Args:
-        session_id: Unique session identifier (as query parameter)
-        files: List of image files to upload
-        
-    Returns:
-        Dict with upload status information
-    """
-    # Log the request details for debugging
-    logging.info(f"Upload request received for session {session_id} with {len(files)} files")
-    
-    # Get session paths
-    session_manager = get_session_manager()
-    paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        logging.error(f"Session not found: {session_id}")
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Save uploaded files to raw directory
-    raw_user_dir = paths["raw_user"]
-    saved_files = []
-    
-    try:
-        for file in files:
-            if file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
-                # Create safe filename
-                safe_filename = os.path.basename(file.filename)
-                file_path = os.path.join(raw_user_dir, safe_filename)
-                
-                # Ensure the directory exists
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                
-                # Log file details
-                logging.info(f"Processing file: {file.filename}, saving to {file_path}")
-                
-                try:
-                    # Save the file
-                    contents = await file.read()
-                    with open(file_path, 'wb') as f:
-                        f.write(contents)
-                    
-                    saved_files.append(file.filename)
-                    logging.info(f"Saved file: {file_path}")
-                except Exception as e:
-                    logging.error(f"Error saving file {file.filename}: {e}")
-    except Exception as e:
-        logging.error(f"Error during file upload: {e}")
-        raise HTTPException(status_code=500, detail=f"Error uploading files: {str(e)}")
-    
-    logging.info(f"Upload complete for session {session_id}: {len(saved_files)} files saved")
-    
-    return {
-        "session_id": session_id,
-        "uploaded_files": saved_files,
-        "total_files": len(saved_files),
-        "status": "success" if saved_files else "no_files_saved"
-    }
+class PhotoUploadResponse(BaseModel):
+    session_id: str
+    uploaded_files: List[str]
+    total_files: int
+    status: str
 
-@router.post("/process")
-async def process_photos(
-    request: ProcessRequest,
-    background_tasks: BackgroundTasks,
-    session_id: str = Query(...)
+# Add a response model for the /process endpoint
+class ProcessInitiatedResponse(BaseModel):
+    session_id: str
+    status: str
+    message: str
+
+class StatusResponse(BaseModel):
+    session_id: str
+    status: str
+    message: str
+    user_photos_processed: Optional[int] = None
+    public_photos_processed: Optional[int] = None
+    locations_detected: Optional[List[str]] = None
+
+# --- FastAPI Endpoints ---
+
+@router.post("/photos", response_model=PhotoUploadResponse)
+async def upload_photos(
+    session_id: str = Query(..., description="Unique session identifier provided by the client."),
+    files: List[UploadFile] = File(..., description="List of image files to upload.")
 ):
     """
-    Process the uploaded photos in the session.
-    
-    Args:
-        request: Request with session_id
-        background_tasks: FastAPI background tasks
-        
-    Returns:
-        Dict with processing status information
+    Uploads user photos to a temporary session directory for later processing.
+    Handles multiple file uploads and basic validation.
+    """
+    logger.info(f"Received photo upload request for session_id: {session_id} with {len(files)} file(s).")
+    session_manager = get_session_manager()
+    if not session_manager:
+         logger.error("Session Manager is not available.")
+         raise HTTPException(status_code=500, detail="Server configuration error: Session Manager unavailable.")
+
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "raw_user" not in paths:
+        logger.error(f"Session not found or 'raw_user' path missing for session_id: {session_id}")
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found or invalid.")
+
+    raw_user_dir = Path(paths["raw_user"])
+    saved_files_list = []
+    file_count = 0
+
+    try:
+        os.makedirs(raw_user_dir, exist_ok=True) # Ensure directory exists
+        logger.debug(f"Upload directory: {raw_user_dir}")
+
+        for file in files:
+            file_count += 1
+            logger.debug(f"Processing uploaded file {file_count}/{len(files)}: {file.filename}")
+            # Basic validation
+            if not file.filename:
+                 logger.warning(f"Skipping file {file_count} due to missing filename.")
+                 continue
+            if not file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
+                 logger.warning(f"Skipping file '{file.filename}' due to unsupported extension.")
+                 continue
+
+            # Sanitize filename (important for security)
+            safe_filename = os.path.basename(file.filename)
+            file_path = raw_user_dir / safe_filename
+
+            try:
+                # Use aiofiles for async write operation
+                async with aiofiles.open(file_path, 'wb') as f:
+                    content = await file.read() # Read file content async
+                    await f.write(content)
+                saved_files_list.append(safe_filename)
+                logger.info(f"Successfully saved file: {file_path}")
+            except Exception as e:
+                logger.error(f"Error saving file '{safe_filename}' to {file_path}: {e}", exc_info=True)
+            finally:
+                 await file.close() # Ensure file handle is closed
+
+    except Exception as e:
+        logger.error(f"Critical error during file upload process for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An unexpected error occurred during file upload.")
+
+    status_msg = "success"
+    if not saved_files_list:
+        if file_count > 0:
+            status_msg = "no_valid_files_saved"
+            logger.warning(f"Upload completed for session {session_id}, but no valid files were saved.")
+        else:
+            status_msg = "no_files_uploaded"
+            logger.warning(f"Upload request for session {session_id} contained no files.")
+
+
+    logger.info(f"Upload complete for session {session_id}. Saved {len(saved_files_list)} files.")
+    return PhotoUploadResponse(
+        session_id=session_id,
+        uploaded_files=saved_files_list,
+        total_files=len(saved_files_list),
+        status=status_msg
+    )
+
+# --- Background Task Function ---
+# This function runs the actual processing. It's called by the /process endpoint.
+# Note: This function itself runs synchronously within the background task runner.
+async def process_session_photos_task(processor: DataProcessor, session_id: str, paths: dict):
+    """
+    Background task to process photos for a session using DataProcessor.
+    Updates the database upon completion.
+    """
+    logger.info(f"[Background Task] Starting processing for session: {session_id}")
+    try:
+        # Step 1: Process user images using DataProcessor
+        user_metadata = processor.process_images(
+            source_dir=Path(paths["raw_user"]),
+            output_dir=Path(paths["processed_user"]),
+            prefix="user"
+        )
+
+        # Step 2: Define DB path and save metadata to the database
+        db_path = Path(paths.get("metadata", ".")) / f"{session_id}_memories.db"
+        paths["db_path"] = str(db_path) # Store for status check
+
+        processor.create_sqlite_database(
+            db_path=db_path,
+            user_metadata=user_metadata,
+            public_metadata={} # Assuming only user photos processed here
+        )
+        logger.info(f"[Background Task] Completed processing and DB update for session: {session_id} at {db_path}")
+
+        # Step 3 (Optional): Update session manager with locations
+        session_manager = get_session_manager()
+        if session_manager:
+            try:
+                locations_found = set()
+                for data in user_metadata.values():
+                    location = data.get('location')
+                    if location and location != "Unknown Location":
+                        locations_found.add(location.split(',')[0].strip())
+                logger.debug(f"[Background Task] Adding locations to session manager: {locations_found}")
+                for loc in locations_found:
+                    session_manager.add_location(session_id, loc)
+            except Exception as sm_e:
+                logger.error(f"[Background Task] Failed to update session manager locations for {session_id}: {sm_e}")
+
+    except Exception as e:
+        # Log errors that occur within the background task
+        logger.error(f"[Background Task] CRITICAL error during processing for session {session_id}: {e}", exc_info=True)
+        # Note: We can't directly return an HTTP response from a background task.
+        # The status endpoint should reflect the lack of completion or an error state if possible.
+
+# --- Modified /process endpoint ---
+@router.post("/process", response_model=ProcessInitiatedResponse)
+async def process_photos(
+    request: ProcessRequest, # Takes session_id from JSON body
+    background_tasks: BackgroundTasks # Inject BackgroundTasks dependency
+):
+    """
+    Initiates the processing of uploaded photos for the given session
+    by adding the task to the background. Returns immediately.
     """
     session_id = request.session_id
-    
-    # Log the request
-    logging.info(f"Processing request received for session: {session_id}")
-    
-    # Get session paths
+    logger.info(f"Received request to initiate background processing for session_id: {session_id}")
+
     session_manager = get_session_manager()
+    if not session_manager:
+         logger.error("Session Manager is not available for /process endpoint.")
+         raise HTTPException(status_code=500, detail="Server configuration error: Session Manager unavailable.")
+
     paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        logging.error(f"Session not found: {session_id}")
-        raise HTTPException(status_code=404, detail="Session not found")
-    
+    if not paths or not all(k in paths for k in ["raw_user", "processed_user", "metadata", "raw_public", "processed_public"]):
+        logger.error(f"Session '{session_id}' not found or missing required paths for processing.")
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found or configuration is invalid.")
+
+    # Ensure output directories exist before potentially starting the task
     try:
-        # Initialize the data processor
+        os.makedirs(paths.get("processed_user"), exist_ok=True)
+        os.makedirs(paths.get("processed_public"), exist_ok=True)
+        os.makedirs(paths.get("metadata"), exist_ok=True)
+    except OSError as e:
+        logger.error(f"Failed to create necessary output directories for session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to prepare session directories for processing.")
+
+    try:
+        # Initialize the DataProcessor - This still happens synchronously here
+        # to catch init errors before starting the background task.
+        logger.debug(f"Initializing DataProcessor for session {session_id} before background task...")
         processor = DataProcessor(
             raw_user_dir=paths["raw_user"],
             raw_public_dir=paths["raw_public"],
             processed_user_dir=paths["processed_user"],
             processed_public_dir=paths["processed_public"],
-            metadata_dir=paths["metadata"]
+            metadata_dir=paths["metadata"],
         )
-        
-        # Start processing in the background
-        background_tasks.add_task(process_session_photos, processor, session_id, paths)
-        
-        return {
-            "session_id": session_id,
-            "status": "processing_started",
-            "message": "Photo processing has been started in the background"
-        }
-    except Exception as e:
-        logging.error(f"Error processing files for session {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Error processing photos: {str(e)}")
+        logger.debug("DataProcessor initialized successfully.")
 
-# Add the missing process_session_photos function
-async def process_session_photos(processor, session_id, paths):
-    """
-    Background task to process uploaded photos in a session.
-    
-    Args:
-        processor: DataProcessor instance
-        session_id: Unique session identifier
-        paths: Session paths
-    """
-    logging.info(f"Starting background processing for session: {session_id}")
-    
-    try:
-        # Process user photos
-        user_metadata = processor.process_images(
-            Path(paths["raw_user"]),
-            Path(paths["processed_user"]),
-            "user"
-        )
-        
-        # Extract locations from processed metadata
-        session_manager = get_session_manager()
-        for _, data in user_metadata.items():
-            location = data.get('location')
-            session_manager.add_location(session_id, location)
-        
-        # Save metadata to database
-        processor.create_sqlite_database(
-            paths["db_path"],
-            user_metadata,
-            {}  # Empty public metadata for now
-        )
-        
-        logging.info(f"Completed processing user photos for session: {session_id}")
-    except Exception as e:
-        logging.error(f"Error in background processing for session {session_id}: {e}")
+        # Add the actual processing function to run in the background
+        background_tasks.add_task(process_session_photos_task, processor, session_id, paths)
+        logger.info(f"Added processing task for session {session_id} to background.")
 
-# Add status endpoint to check processing progress
-@router.get("/status/{session_id}")
+        # Return immediately, indicating processing has started
+        return ProcessInitiatedResponse(
+            session_id=session_id,
+            status="processing_started",
+            message="Photo processing started in the background. Use the /status endpoint to check progress."
+        )
+
+    except Exception as e:
+        # Catch errors during DataProcessor init or other setup before background task starts
+        logger.error(f"Error initiating processing for session {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to initiate photo processing: {str(e)}")
+
+
+# --- Status Endpoint ---
+# (Keep the /status/{session_id} endpoint as defined previously - it reads the DB)
+@router.get("/status/{session_id}", response_model=StatusResponse)
 async def get_processing_status(session_id: str):
     """
-    Get the current processing status for a session.
-    
-    Args:
-        session_id: Unique session identifier
-        
-    Returns:
-        Dict with processing status information
+    Checks the processing status by querying the database created by the background task.
     """
-    # Get session paths
+    logger.info(f"Received status check request for session_id: {session_id}")
     session_manager = get_session_manager()
+    if not session_manager:
+         logger.error("Session Manager is not available for /status endpoint.")
+         raise HTTPException(status_code=500, detail="Server configuration error: Session Manager unavailable.")
+
     paths = session_manager.get_session_paths(session_id)
-    
-    if not paths:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Check if database exists
-    if not os.path.exists(paths["db_path"]):
-        return {
-            "session_id": session_id,
-            "status": "not_processed",
-            "message": "Photos have not been processed yet"
-        }
-    
-    # Connect to the database
+    if not paths or "metadata" not in paths:
+        logger.warning(f"Session '{session_id}' not found or metadata path missing for status check.")
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found or configuration is invalid.")
+
+    # Define the expected database path
+    db_path = Path(paths.get("metadata")) / f"{session_id}_memories.db"
+    logger.debug(f"Checking for database at: {db_path}")
+
+    # Check if processing might still be ongoing (no DB yet)
+    if not db_path.exists():
+        # Check if raw files exist to distinguish "not started" vs "in progress"
+        raw_user_dir = Path(paths.get("raw_user", ""))
+        status_msg = "pending"
+        message = "Processing is pending or has not created the database yet."
+        if raw_user_dir.exists() and any(raw_user_dir.iterdir()):
+             status_msg = "processing_pending_db"
+             message = "Session files exist, processing is likely ongoing or failed before DB creation."
+        else:
+             status_msg = "no_files_or_not_started"
+             message = "No files found in session, or processing not initiated."
+
+        # Return pending status
+        return StatusResponse(session_id=session_id, status=status_msg, message=message)
+
+    # Database exists, query it for status
+    conn = None
     try:
-        import sqlite3
-        conn = sqlite3.connect(paths["db_path"])
+        logger.debug(f"Connecting to database {db_path} for status check.")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
-        # Get count of processed photos
+
+        # Get counts per type
         cursor.execute("SELECT type, COUNT(*) FROM memories GROUP BY type")
         counts = {row[0]: row[1] for row in cursor.fetchall()}
-        
         user_count = counts.get("user", 0)
-        public_count = counts.get("public", 0)
-        
-        # Get locations
-        cursor.execute("SELECT DISTINCT location FROM memories")
-        locations = [row[0].split(',')[0].strip() for row in cursor.fetchall() 
-                    if row[0] and row[0].lower() != "unknown location"]
-        
-        status = "processing"
-        if user_count > 0 and public_count > 0:
-            status = "completed"
-        elif user_count > 0:
-            status = "user_processed"
-        
-        conn.close()
-        
-        return {
-            "session_id": session_id,
-            "status": status,
-            "user_photos_processed": user_count,
-            "public_photos_processed": public_count,
-            "locations_detected": list(set(locations)),
-            "message": f"Processed {user_count} user photos and {public_count} public photos"
-        }
+        public_count = counts.get("public", 0) # Check even if not expected in this flow
+        logger.debug(f"DB counts - User: {user_count}, Public: {public_count}")
+
+        # Get distinct primary locations for user photos
+        cursor.execute("SELECT DISTINCT location FROM memories WHERE type='user'")
+        locations = list(set(
+             row[0].split(',')[0].strip() for row in cursor.fetchall()
+             if row[0] and row[0].lower() != "unknown location" # Filter out unknowns
+        ))
+        logger.debug(f"DB distinct locations: {locations}")
+
+        # Determine status based on DB content (adjust logic as needed)
+        # This needs refinement - how do we know if the background task *finished* vs just created some entries?
+        # We might need a separate status flag in the DB or session manager updated by the task.
+        # For now, presence of user photos indicates user processing is done.
+        status_val = "unknown_db_state"
+        message = "Database exists, but processing state is unclear."
+        if user_count > 0:
+            # Assuming user photo processing is the main task tracked here
+            status_val = "user_processed" # Matches frontend expectation
+            message = f"User photo processing complete. Found {user_count} entries."
+        else:
+             status_val = "db_exists_no_user_photos"
+             message = "Database exists, but no 'user' type entries were found."
+             # If public photos are processed separately, add logic here
+
+        # TODO: Add a more robust way to track if the background task itself has fully completed or errored.
+        # This might involve writing a status file or updating the session manager state upon task completion/failure.
+
+        return StatusResponse(
+            session_id=session_id,
+            status=status_val, # Return status based on DB content
+            message=message,
+            user_photos_processed=user_count,
+            public_photos_processed=public_count, # If applicable
+            locations_detected=locations
+        )
+
+    except sqlite3.Error as e:
+        logger.error(f"SQLite error checking status for {session_id} in {db_path}: {e}", exc_info=True)
+        # Return an error status that the frontend can understand
+        return StatusResponse(
+            session_id=session_id,
+            status="error_db_read",
+            message=f"Error reading database: {str(e)}"
+        )
     except Exception as e:
-        logging.error(f"Error checking processing status: {e}")
-        return {
-            "session_id": session_id,
-            "status": "error",
-            "message": f"Error checking processing status: {str(e)}"
-        }
+         logger.error(f"Unexpected error during status check for {session_id}: {e}", exc_info=True)
+         raise HTTPException(status_code=500, detail=f"Unexpected error checking status: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+            logger.debug("Database connection closed.")
+
+
+# --- Include router in main app ---
+# Example main.py:
+# from fastapi import FastAPI
+# from app.api.endpoints import upload # Assuming this file is app/api/endpoints/upload.py
+#
+# app = FastAPI()
+# app.include_router(upload.router, prefix="/api/upload", tags=["upload"])

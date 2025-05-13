@@ -97,7 +97,7 @@ Drawing from interdisciplinary research in:
    Start the backend server:
    ```
    cd backend
-   uvicorn app.main:app --reload
+   python -m uvicorn app.main:app --reload
    ```
    In a new terminal, start the frontend:
    ```
