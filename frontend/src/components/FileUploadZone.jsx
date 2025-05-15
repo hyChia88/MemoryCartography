@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'; // Added useRef
 import axios from 'axios';
 import ResetWeightsButton from './ResetWeightsButton'; // Assuming this component exists
+import ProcessingComplete from './ProcessingComplete';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
@@ -540,6 +541,9 @@ const FileUploadZone = ({ onSessionCreated }) => {
              <p className="text-xs text-gray-500 mt-4">
                 Session ID: {sessionId}. This session will be cleared after a period of inactivity.
               </p>
+            <div>
+              <ProcessingComplete sessionId={sessionId} />
+            </div>
           </div>
         )}
       </div>

@@ -174,13 +174,14 @@ class DataProcessor:
         unique_paths = sorted(list(set(valid_image_paths)))
         logger.info(f"Found {len(unique_paths)} unique image files.")
         return unique_paths
-
+    
     def extract_image_metadata(self, image_path: Path) -> tuple[str, str]:
         """Extracts location and date from image EXIF data or uses fallbacks."""
         location = "Unknown Location"
         date = datetime.now().strftime('%Y-%m-%d') # Default to current date
 
         try:
+            logger.info(f"Extracting metadata for: {image_path.name}")
             img = Image.open(image_path)
             exif_data_raw = img._getexif()
 
@@ -203,53 +204,96 @@ class DataProcessor:
 
                 # Extract GPS Location and geocode
                 gps_info = exif_data.get('GPSInfo')
-                if gps_info and self.geolocator:
-                    try:
-                        # Convert GPS EXIF data to decimal degrees
-                        def get_decimal_from_dms(dms, ref):
-                            degrees, minutes, seconds = dms
-                            decimal = degrees + (minutes / 60.0) + (seconds / 3600.0)
-                            if ref in ['S', 'W']:
-                                decimal *= -1
-                            return decimal
+                if gps_info:
+                    logger.info(f"Found GPS info for {image_path.name}")
+                    if self.geolocator:
+                        try:
+                            # Convert GPS EXIF data to decimal degrees
+                            def get_decimal_from_dms(dms, ref):
+                                degrees, minutes, seconds = dms
+                                decimal = degrees + (minutes / 60.0) + (seconds / 3600.0)
+                                if ref in ['S', 'W']:
+                                    decimal *= -1
+                                return decimal
 
-                        lat_dms = gps_info.get(2) # GPSLatitude
-                        lat_ref = gps_info.get(1) # GPSLatitudeRef
-                        lon_dms = gps_info.get(4) # GPSLongitude
-                        lon_ref = gps_info.get(3) # GPSLongitudeRef
+                            lat_dms = gps_info.get(2) # GPSLatitude
+                            lat_ref = gps_info.get(1) # GPSLatitudeRef
+                            lon_dms = gps_info.get(4) # GPSLongitude
+                            lon_ref = gps_info.get(3) # GPSLongitudeRef
 
-                        if lat_dms and lat_ref and lon_dms and lon_ref:
-                            latitude = get_decimal_from_dms(lat_dms, lat_ref)
-                            longitude = get_decimal_from_dms(lon_dms, lon_ref)
-                            logger.debug(f"Extracted GPS coordinates ({latitude}, {longitude}) for {image_path.name}")
+                            if lat_dms and lat_ref and lon_dms and lon_ref:
+                                latitude = get_decimal_from_dms(lat_dms, lat_ref)
+                                longitude = get_decimal_from_dms(lon_dms, lon_ref)
+                                logger.debug(f"Extracted GPS coordinates ({latitude}, {longitude}) for {image_path.name}")
 
-                            # Reverse geocode coordinates
-                            geo_location = self.geolocator.reverse((latitude, longitude), exactly_one=True, timeout=10)
-                            if geo_location:
-                                location = geo_location.address
-                                logger.debug(f"Geocoded location: {location}")
+                                # Reverse geocode coordinates
+                                geo_location = self.geolocator.reverse((latitude, longitude), exactly_one=True, timeout=10)
+                                if geo_location:
+                                    location = geo_location.address
+                                    logger.info(f"Geocoded location: {location} for {image_path.name}")
+                                else:
+                                    logger.warning(f"Could not reverse geocode coordinates for {image_path.name}")
                             else:
-                                logger.warning(f"Could not reverse geocode coordinates for {image_path.name}")
-                        else:
-                            logger.debug(f"Incomplete GPSInfo found for {image_path.name}")
-                    except Exception as e:
-                        logger.error(f"Error processing GPS data or geocoding for {image_path.name}: {e}")
+                                logger.debug(f"Incomplete GPSInfo found for {image_path.name}")
+                        except Exception as e:
+                            logger.error(f"Error processing GPS data or geocoding for {image_path.name}: {e}")
+                    else:
+                        logger.warning("Geolocator not available - cannot process GPS data")
+                else:
+                    logger.info(f"No GPS info found in EXIF for {image_path.name}")
 
-            # Fallback: Use parent directory name if location is still unknown
+                # Fallback: Use parent directory name if location is still unknown
+                if location == "Unknown Location":
+                    parent_folder = image_path.parent.name
+                    # Basic check to avoid using top-level dir name like 'raw_user'
+                    if parent_folder not in ['raw_user', 'raw_public', 'user', 'public', 'raw', 'processed']:
+                        location = parent_folder.replace('_', ' ').title()
+                        logger.debug(f"Using parent folder name as fallback location: {location}")
+            else:
+                logger.info(f"No EXIF data found for {image_path.name}")
+
+            # Try to extract location from filename patterns if still unknown
             if location == "Unknown Location":
-                parent_folder = image_path.parent.name
-                # Basic check to avoid using top-level dir name like 'raw_user'
-                if parent_folder != self.raw_user_dir.name and parent_folder != self.raw_public_dir.name:
-                    location = parent_folder.replace('_', ' ').title()
-                    logger.debug(f"Using parent folder name as fallback location: {location}")
+                location = self._extract_location_from_filename(image_path)
 
         except Exception as e:
-            logger.error(f"Error extracting metadata for {image_path.name}: {e}", exc_info=True)
+            logger.error(f"Error extracting EXIF metadata for {image_path}: {e}", exc_info=True)
 
+        logger.info(f"Final metadata for {image_path.name}: location='{location}', date='{date}'")
         return location, date
 
+    def _extract_location_from_filename(self, image_path: Path) -> str:
+        """Extract location from filename patterns."""
+        filename_lower = image_path.stem.lower()
+        
+        # Common location patterns in filenames
+        location_patterns = {
+            'beach': 'Beach Area',
+            'park': 'Park',
+            'home': 'Home',
+            'office': 'Office',
+            'garden': 'Garden',
+            'city': 'City Center',
+            'downtown': 'Downtown',
+            'mall': 'Shopping Mall',
+            'restaurant': 'Restaurant',
+            'cafe': 'Cafe',
+            'hotel': 'Hotel',
+            'vacation': 'Vacation Spot',
+            'trip': 'Travel Location',
+            'holiday': 'Holiday Destination'
+        }
+        
+        for pattern, location_name in location_patterns.items():
+            if pattern in filename_lower:
+                logger.info(f"Extracted location '{location_name}' from filename pattern '{pattern}'")
+                return location_name
+        
+        # If no pattern matches, return Unknown Location
+        return "Unknown Location"
+        
     def analyze_image_emotional_intensity(self, image_path: Path) -> tuple[List[str], str, float]:
-        """Analyzes image using OpenAI Vision API for keywords, description, and impact."""
+        """Analyzes image using OpenAI Vision API for keywords, description, and impact, incorporating YOLO object detection if applicable."""
         if not self.client:
             logger.warning(f"OpenAI client not available. Skipping analysis for {image_path.name}.")
             return ["no_openai"], "OpenAI analysis skipped.", 1.0
@@ -260,8 +304,27 @@ class DataProcessor:
             with open(image_path, "rb") as image_file:
                 base64_image = base64.b64encode(image_file.read()).decode("utf-8")
 
+            # Perform YOLO object detection if available
+            detected_objects = []
+            if YOLO_AVAILABLE and self.yolo_model:
+                results = self.yolo_model(image_path, verbose=False)  # verbose=False reduces console spam
+                if results and results[0].boxes:
+                    boxes = results[0].boxes.xyxy.cpu().numpy()  # Bounding boxes (x1, y1, x2, y2)
+                    confs = results[0].boxes.conf.cpu().numpy()  # Confidences
+                    clss = results[0].boxes.cls.cpu().numpy()    # Class IDs
+                    names = results[0].names  # Class names mapping (dict: id -> name)
+
+                    for i in range(len(boxes)):
+                        class_id = int(clss[i])
+                        detected_objects.append({
+                            "box": boxes[i].tolist(),  # [x1, y1, x2, y2]
+                            "confidence": float(confs[i]),
+                            "class_id": class_id,
+                            "class_name": names[class_id]  # Get name from mapping
+                        })
+
             response = self.client.chat.completions.create(
-                model="gpt-4o", # Or "gpt-4-vision-preview", "gpt-4-turbo"
+                model="gpt-4o",  # Or "gpt-4-vision-preview", "gpt-4-turbo"
                 messages=[
                     {
                         "role": "system",
@@ -281,8 +344,8 @@ class DataProcessor:
                     }
                 ],
                 response_format={"type": "json_object"},
-                max_tokens=300, # Adjust as needed
-                temperature=0.5 # Control creativity/randomness
+                max_tokens=300,  # Adjust as needed
+                temperature=0.5  # Control creativity/randomness
             )
 
             # Extract and validate the result
@@ -292,14 +355,14 @@ class DataProcessor:
             keywords = result.get('keywords', ["analysis_error"])
             description = result.get('description', "Analysis failed or format error.")
             weight = float(result.get('impact_score', 1.0))
-            weight = max(0.2, min(2.0, weight)) # Clamp score to the defined range
+            weight = max(0.2, min(2.0, weight))  # Clamp score to the defined range
 
             logger.info(f"OpenAI analysis successful for {image_path.name}. Impact: {weight}")
             return keywords, description, weight
 
         except json.JSONDecodeError as e:
-             logger.error(f"OpenAI analysis failed for {image_path.name} - Invalid JSON received: {result_json}. Error: {e}")
-             return ["json_error"], "Failed to parse OpenAI response.", 1.0
+            logger.error(f"OpenAI analysis failed for {image_path.name} - Invalid JSON received: {result_json}. Error: {e}")
+            return ["json_error"], "Failed to parse OpenAI response.", 1.0
         except Exception as e:
             logger.error(f"OpenAI analysis failed for {image_path.name}: {e}", exc_info=True)
             return ["api_error"], "OpenAI API call failed.", 1.0
@@ -612,6 +675,7 @@ class PhotoUploadResponse(BaseModel):
     total_files: int
     status: str
 
+#=============
 # Add a response model for the /process endpoint
 class ProcessInitiatedResponse(BaseModel):
     session_id: str
@@ -625,6 +689,40 @@ class StatusResponse(BaseModel):
     user_photos_processed: Optional[int] = None
     public_photos_processed: Optional[int] = None
     locations_detected: Optional[List[str]] = None
+    
+class ProcessedPhotoDetail(BaseModel):
+    id: int
+    filename: str
+    original_path: Optional[str] = None
+    processed_path: Optional[str] = None
+    title: Optional[str] = None
+    location: Optional[str] = None
+    date: Optional[str] = None
+    type: str  # 'user' or 'public'
+    openai_keywords: List[str] = []
+    openai_description: Optional[str] = None
+    impact_weight: float = 1.0
+    detected_objects: List[str] = []
+    resnet_embedding: Optional[List[float]] = None  # Optional, can be large
+    image_url: Optional[str] = None
+
+class ProcessedPhotosResponse(BaseModel):
+    session_id: str
+    total_count: int
+    user_count: int
+    public_count: int
+    photos: List[ProcessedPhotoDetail]
+
+class ProcessedPhotoSummary(BaseModel):
+    session_id: str
+    total_photos: int
+    user_photos: int
+    public_photos: int
+    locations_detected: List[str]
+    date_range: Dict[str, Optional[str]]  # {"earliest": "2023-01-01", "latest": "2023-12-31"}
+    top_keywords: List[Dict[str, Any]]  # [{"keyword": "beach", "count": 5}, ...]
+    average_impact_weight: float
+
 
 # --- FastAPI Endpoints ---
 
@@ -807,7 +905,12 @@ async def process_photos(
         return ProcessInitiatedResponse(
             session_id=session_id,
             status="processing_started",
-            message="Photo processing started in the background. Use the /status endpoint to check progress."
+            message="Photo processing started in the background. Use the /status endpoint to check progress.",
+            # openai_keywords=processor.openai_keywords,
+            # openai_description=processor.openai_des,
+            # location=processor.location,
+            # impact_weight=processor.impact_weight,
+            # restnet_embedding=processor.restnet_embedding
         )
 
     except Exception as e:
@@ -920,6 +1023,320 @@ async def get_processing_status(session_id: str):
             conn.close()
             logger.debug("Database connection closed.")
 
+# ================
+@router.get("/processed/{session_id}", response_model=ProcessedPhotosResponse)
+async def get_processed_photos(
+    session_id: str,
+    photo_type: str = Query('all', description="Filter by type: 'all', 'user', or 'public'"),
+    limit: int = Query(50, ge=1, le=200, description="Maximum number of photos to return"),
+    offset: int = Query(0, ge=0, description="Number of photos to skip"),
+    include_embeddings: bool = Query(True, description="Include ResNet embeddings in response")
+):
+    """
+    Get details of all processed photos for a session.
+    """
+    logger.info(f"Received request for processed photos: session_id={session_id}, type={photo_type}, limit={limit}")
+    
+    session_manager = get_session_manager()
+    if not session_manager:
+        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
+    
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    
+    # Check database exists
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Build query based on photo_type filter
+        base_query = """
+            SELECT id, filename, original_path, processed_path, title, location, date, type,
+                   openai_keywords, openai_description, impact_weight, detected_objects
+        """
+        if include_embeddings:
+            base_query += ", resnet_embedding"
+        
+        base_query += " FROM memories"
+        
+        params = []
+        if photo_type != 'all':
+            base_query += " WHERE type = ?"
+            params.append(photo_type)
+        
+        # Add ordering and pagination
+        base_query += " ORDER BY impact_weight DESC, date DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        
+        cursor.execute(base_query, params)
+        rows = cursor.fetchall()
+        
+        # Get total counts
+        cursor.execute("SELECT type, COUNT(*) FROM memories GROUP BY type")
+        counts = {row[0]: row[1] for row in cursor.fetchall()}
+        total_count = sum(counts.values())
+        user_count = counts.get('user', 0)
+        public_count = counts.get('public', 0)
+        
+        # Process results
+        photos = []
+        base_static_path = f"/api/session/static/{session_id}"
+        
+        for row in rows:
+            # Parse JSON fields
+            keywords = json.loads(row['openai_keywords']) if row['openai_keywords'] else []
+            objects = json.loads(row['detected_objects']) if row['detected_objects'] else []
+            
+            # Handle embedding if requested
+            embedding = None
+            if include_embeddings and 'resnet_embedding' in row.keys() and row['resnet_embedding']:
+                try:
+                    embedding = json.loads(row['resnet_embedding'])
+                except json.JSONDecodeError:
+                    embedding = None
+            
+            # Construct image URL
+            img_url = None
+            if row['processed_path']:
+                # Extract type and filename from processed_path
+                path_parts = Path(row['processed_path']).parts
+                if len(path_parts) >= 2:
+                    img_type = path_parts[-2]  # 'user' or 'public'
+                    img_filename = path_parts[-1]
+                    img_url = f"{base_static_path}/{img_type}/{img_filename}"
+            
+            photo_detail = ProcessedPhotoDetail(
+                id=row['id'],
+                filename=row['filename'],
+                original_path=row['original_path'],
+                processed_path=row['processed_path'],
+                title=row['title'],
+                location=row['location'],
+                date=row['date'],
+                type=row['type'],
+                openai_keywords=keywords,
+                openai_description=row['openai_description'],
+                impact_weight=row['impact_weight'],
+                detected_objects=objects,
+                resnet_embedding=embedding,
+                image_url=img_url
+            )
+            photos.append(photo_detail)
+        
+        return ProcessedPhotosResponse(
+            session_id=session_id,
+            total_count=total_count,
+            user_count=user_count,
+            public_count=public_count,
+            photos=photos
+        )
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error getting processed photos for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error getting processed photos for {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+
+@router.get("/processed/{session_id}/summary", response_model=ProcessedPhotoSummary)
+async def get_processed_photos_summary(session_id: str):
+    """
+    Get a summary of processed photos for a session including statistics.
+    """
+    logger.info(f"Received request for processed photos summary: session_id={session_id}")
+    
+    session_manager = get_session_manager()
+    if not session_manager:
+        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
+    
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    
+    # Check database exists
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Get basic counts
+        cursor.execute("SELECT type, COUNT(*) FROM memories GROUP BY type")
+        counts = {row[0]: row[1] for row in cursor.fetchall()}
+        total_photos = sum(counts.values())
+        user_photos = counts.get('user', 0)
+        public_photos = counts.get('public', 0)
+        
+        # Get unique locations
+        cursor.execute("""
+            SELECT DISTINCT location FROM memories 
+            WHERE location IS NOT NULL AND location != 'Unknown Location'
+        """)
+        locations = [row[0].split(',')[0].strip() for row in cursor.fetchall()]
+        locations = list(set(locations))  # Remove duplicates
+        
+        # Get date range
+        cursor.execute("SELECT MIN(date) as earliest, MAX(date) as latest FROM memories")
+        date_row = cursor.fetchone()
+        date_range = {
+            "earliest": date_row['earliest'],
+            "latest": date_row['latest']
+        }
+        
+        # Get average impact weight
+        cursor.execute("SELECT AVG(impact_weight) as avg_weight FROM memories")
+        avg_weight = cursor.fetchone()['avg_weight'] or 1.0
+        
+        # Get top keywords
+        cursor.execute("SELECT openai_keywords FROM memories")
+        all_keywords = []
+        for row in cursor.fetchall():
+            if row['openai_keywords']:
+                try:
+                    keywords = json.loads(row['openai_keywords'])
+                    all_keywords.extend(keywords)
+                except json.JSONDecodeError:
+                    continue
+        
+        # Count keyword frequency
+        keyword_counts = {}
+        for keyword in all_keywords:
+            keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
+        
+        # Get top 10 keywords
+        top_keywords = [
+            {"keyword": k, "count": v} 
+            for k, v in sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        ]
+        
+        return ProcessedPhotoSummary(
+            session_id=session_id,
+            total_photos=total_photos,
+            user_photos=user_photos,
+            public_photos=public_photos,
+            locations_detected=locations,
+            date_range=date_range,
+            top_keywords=top_keywords,
+            average_impact_weight=round(avg_weight, 2)
+        )
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error getting summary for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error getting summary for {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+
+@router.get("/processed/{session_id}/photo/{photo_id}", response_model=ProcessedPhotoDetail)
+async def get_single_processed_photo(session_id: str, photo_id: int, include_embeddings: bool = Query(True)):
+    """
+    Get details of a single processed photo by ID.
+    """
+    logger.info(f"Received request for single photo: session_id={session_id}, photo_id={photo_id}")
+    
+    session_manager = get_session_manager()
+    if not session_manager:
+        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
+    
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    
+    # Check database exists
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Build query
+        query = """
+            SELECT id, filename, original_path, processed_path, title, location, date, type,
+                   openai_keywords, openai_description, impact_weight, detected_objects
+        """
+        if include_embeddings:
+            query += ", resnet_embedding"
+        
+        query += " FROM memories WHERE id = ?"
+        
+        cursor.execute(query, (photo_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Photo with ID {photo_id} not found.")
+        
+        # Parse JSON fields
+        keywords = json.loads(row['openai_keywords']) if row['openai_keywords'] else []
+        objects = json.loads(row['detected_objects']) if row['detected_objects'] else []
+        
+        # Handle embedding if requested
+        embedding = None
+        if include_embeddings and 'resnet_embedding' in row.keys() and row['resnet_embedding']:
+            try:
+                embedding = json.loads(row['resnet_embedding'])
+            except json.JSONDecodeError:
+                embedding = None
+        
+        # Construct image URL
+        img_url = None
+        base_static_path = f"/api/session/static/{session_id}"
+        if row['processed_path']:
+            # Extract type and filename from processed_path
+            path_parts = Path(row['processed_path']).parts
+            if len(path_parts) >= 2:
+                img_type = path_parts[-2]  # 'user' or 'public'
+                img_filename = path_parts[-1]
+                img_url = f"{base_static_path}/{img_type}/{img_filename}"
+        
+        return ProcessedPhotoDetail(
+            id=row['id'],
+            filename=row['filename'],
+            original_path=row['original_path'],
+            processed_path=row['processed_path'],
+            title=row['title'],
+            location=row['location'],
+            date=row['date'],
+            type=row['type'],
+            openai_keywords=keywords,
+            openai_description=row['openai_description'],
+            impact_weight=row['impact_weight'],
+            detected_objects=objects,
+            resnet_embedding=embedding,
+            image_url=img_url
+        )
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error getting photo {photo_id} for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error getting photo {photo_id} for {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
 
 # --- Include router in main app ---
 # Example main.py:

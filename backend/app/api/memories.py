@@ -295,7 +295,8 @@ def search_memories_endpoint(
 
         # 5. Add Image URLs and Format Response
         response_list = []
-        base_static_path = f"/api/static/{session_id}" # Define base path for static files
+        # base_static_path = f"/api/static/{session_id}" # Define base path for static files
+        base_static_path = f"/api/session/static/{session_id}"
         for mem in final_memories:
             # Construct image URL relative to how static files are served
             img_url = None

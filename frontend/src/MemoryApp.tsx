@@ -3,6 +3,7 @@ import axios from 'axios';
 import DOMPurify from 'dompurify';
 import ResetWeightsButton from './components/ResetWeightsButton';
 
+// Update the Memory interface in MemoryApp.tsx
 interface Memory {
   id: number;
   title: string;
@@ -12,7 +13,16 @@ interface Memory {
   type: string;
   description?: string;
   weight?: number;
-  filename?: string; // For retrieving the image
+  filename?: string;
+  // Add these missing properties to match the backend response
+  image_url?: string;  // Add this line
+  original_path?: string;
+  processed_path?: string;
+  openai_keywords?: string[];
+  openai_description?: string;
+  impact_weight?: number;
+  detected_objects?: string[];
+  relevance_score?: number;
 }
 
 // Define sort options
@@ -38,20 +48,32 @@ const MemoryApp: React.FC = () => {
     },
   });
 
-  // Function to get thumbnail URL
+  // Updated getThumbnailUrl function
   const getThumbnailUrl = (memory: Memory): string => {
-    if (!memory.filename) {
-      console.log('No filename found, using placeholder');
-      return '/placeholder-image.jpg'; // Fallback image
+    // Use the image_url provided by the backend if available
+    if (memory.image_url) {
+      const apiUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+      return `${apiUrl}${memory.image_url}`;
     }
     
-    // Add the API base URL
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-    const basePath = memory.type === 'user' ? '/user-photos/' : '/public-photos/';
-    const url = `${apiUrl}${basePath}${memory.filename}`;
+    // Fallback if image_url is not provided
+    if (!memory.filename) {
+      console.log('No filename found, using placeholder');
+      return '/placeholder-image.jpg';
+    }
     
-    console.log(`Thumbnail URL: ${url}`);
-    return url;
+    // Get session ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session');
+    
+    if (!sessionId) {
+      console.error('No session ID found in URL');
+      return '/placeholder-image.jpg';
+    }
+    
+    // Construct URL with session ID
+    const apiUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+    return `${apiUrl}/api/static_content/${sessionId}/${memory.type}/${memory.filename}`;
   };
 
   // Function to sort memories client-side
@@ -76,8 +98,17 @@ const MemoryApp: React.FC = () => {
     setError(null);
 
     try {
+      // Get session ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get('session');
+      
+      if (!sessionId) {
+        throw new Error('No session ID found. Please start over from the upload page.');
+      }
+
       const response = await api.get('/memories/search', {
         params: { 
+          session_id: sessionId,
           query: searchTerm, 
           memory_type: memoryType,
           sort_by: sortBy

@@ -5,6 +5,9 @@ import os
 import logging
 from datetime import datetime
 from app.core.session import get_session_manager
+from fastapi.responses import FileResponse
+from pathlib import Path
+
 
 # Configure router
 router = APIRouter()
@@ -158,3 +161,49 @@ async def mount_static_files(session_id: str, request: Request):
         "user_photos_url": f"/static/{session_id}/user",
         "public_photos_url": f"/static/{session_id}/public"
     }
+    
+@router.get("/static/{session_id}/{memory_type}/{filename}")
+async def serve_session_static_file(session_id: str, memory_type: str, filename: str):
+    """
+    Serve private session files. Files are only accessible during the session.
+    """
+    session_manager = get_session_manager()
+    paths = session_manager.get_session_paths(session_id)
+    
+    if not paths:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Get the correct directory based on memory type
+    if memory_type == "user":
+        base_dir = paths.get("processed_user")
+    elif memory_type == "public":
+        base_dir = paths.get("processed_public")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid memory type")
+    
+    if not base_dir:
+        raise HTTPException(status_code=404, detail="Session directory not found")
+    
+    file_path = Path(base_dir) / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Determine media type
+    media_type = "image/jpeg"
+    if filename.lower().endswith('.png'):
+        media_type = "image/png"
+    elif filename.lower().endswith('.webp'):
+        media_type = "image/webp"
+    
+    # Return file with proper CORS headers
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Cache-Control": "private, no-cache"  # Prevent caching for privacy
+        }
+    )
