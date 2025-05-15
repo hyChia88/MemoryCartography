@@ -136,6 +136,10 @@ def read_root():
         "redoc_url": "/redoc" # Point to default ReDoc
     }
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 # Schedule regular cleanup - This endpoint allows manual triggering.
 # For automatic periodic cleanup, you'd typically use a library like FastAPI-Scheduler or an external cron job.
 @app.get("/api/maintenance/cleanup", tags=["Maintenance"])
