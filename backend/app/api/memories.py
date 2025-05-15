@@ -403,12 +403,12 @@ def generate_narrative_endpoint(
 
     # 3. Create OpenAI Prompt
     prompt = f"""
-You are a creative storyteller. Based on the following memories retrieved for the query '{query}', weave a short, engaging narrative (2-4 sentences). The narrative should connect the memories thematically if possible, reflecting the mood suggested by the keywords and descriptions. Focus on the essence of the memories provided.
+    You are a creative storyteller. Based on the following memories retrieved for the query '{query}', weave a short, engaging narrative (2-4 sentences). The narrative should connect the memories thematically if possible, reflecting the mood suggested by the keywords and descriptions. Focus on the essence of the memories provided.
 
-{narrative_context}
+    {narrative_context}
 
-Generate the narrative:
-"""
+    Generate the narrative:
+    """
 
     # 4. Call OpenAI API
     try:
@@ -436,6 +436,70 @@ Generate the narrative:
         source_memory_ids=source_ids,
         query=query
     )
+    
+@router.post("/{memory_id}/adjust_weight")
+async def adjust_memory_weight(
+    memory_id: int,
+    session_id: str = Query(..., description="Session identifier"),
+    adjustment: float = Query(..., description="Weight adjustment amount (can be positive or negative)")
+):
+    """
+    Adjust the weight of a specific memory by a given amount.
+    """
+    logger.info(f"Adjusting weight for memory {memory_id} by {adjustment} in session {session_id}")
+    
+    session_manager = get_session_manager()
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        logger.error(f"Session '{session_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
+
+    # Define the database path
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail="No memories database found for session")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # First check if memory exists
+        cursor.execute("SELECT impact_weight FROM memories WHERE id = ?", (memory_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Memory with ID {memory_id} not found")
+        
+        current_weight = row[0] or 1.0
+        new_weight = max(0.1, min(10.0, current_weight + adjustment))  # Clamp between 0.1 and 10.0
+        
+        # Update the weight
+        cursor.execute(
+            "UPDATE memories SET impact_weight = ? WHERE id = ?",
+            (new_weight, memory_id)
+        )
+        conn.commit()
+        
+        logger.info(f"Updated memory {memory_id} weight from {current_weight} to {new_weight}")
+        
+        return {
+            "memory_id": memory_id,
+            "old_weight": current_weight,
+            "new_weight": new_weight,
+            "adjustment": adjustment
+        }
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error adjusting weight for memory {memory_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error adjusting memory weight: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
 
 
 # Include this router in your main FastAPI application

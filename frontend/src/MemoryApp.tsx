@@ -9,18 +9,18 @@ interface Memory {
   title: string;
   location: string;
   date: string;
-  keywords: string[];
+  keywords?: string[];  // These might be openai_keywords from backend
   type: string;
   description?: string;
   weight?: number;
   filename?: string;
-  // Add these missing properties to match the backend response
-  image_url?: string;  // Add this line
+  // Backend response fields
+  image_url?: string;
   original_path?: string;
   processed_path?: string;
   openai_keywords?: string[];
   openai_description?: string;
-  impact_weight?: number;
+  impact_weight?: number;  // This is the actual weight field from backend
   detected_objects?: string[];
   relevance_score?: number;
 }
@@ -76,6 +76,11 @@ const MemoryApp: React.FC = () => {
     return `${apiUrl}/api/static_content/${sessionId}/${memory.type}/${memory.filename}`;
   };
 
+  const getSessionId = (): string | null => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('session');
+  };
+
   // Function to sort memories client-side
   const sortMemories = (memoriesToSort: Memory[], sortOption: SortOption): Memory[] => {
     return [...memoriesToSort].sort((a, b) => {
@@ -96,17 +101,15 @@ const MemoryApp: React.FC = () => {
     }
     setLoading(true);
     setError(null);
-
+  
     try {
-      // Get session ID from URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const sessionId = urlParams.get('session');
+      const sessionId = getSessionId();
       
       if (!sessionId) {
         throw new Error('No session ID found. Please start over from the upload page.');
       }
-
-      const response = await api.get('/memories/search', {
+  
+      const response = await api.get('/api/memories/search', {
         params: { 
           session_id: sessionId,
           query: searchTerm, 
@@ -122,7 +125,8 @@ const MemoryApp: React.FC = () => {
       setLoading(false);
     }
   };
-
+  
+  // Update the generateNarrative function to use the helper
   const generateNarrative = async () => {
     if (!searchTerm.trim()) {
       setError('Please enter a search term');
@@ -130,20 +134,44 @@ const MemoryApp: React.FC = () => {
     }
     setLoading(true);
     setError(null);
-
+  
     try {
-      const response = await api.get('/memories/narrative', {
+      const sessionId = getSessionId();
+      
+      if (!sessionId) {
+        throw new Error('No session ID found. Please start over from the upload page.');
+      }
+  
+      const response = await api.get('/api/memories/narrative', {
         params: { 
+          session_id: sessionId,
           query: searchTerm, 
           memory_type: memoryType
         },
       });
-      setNarrative(response.data.text);
-
-      const keywords = response.data.keywords
-        .filter((kw: any) => kw.type === 'primary')
-        .map((kw: any) => kw.text);
-
+      
+      console.log('Narrative response:', response.data); // Debug log
+      
+      // Handle different possible response structures
+      const narrativeData = response.data;
+      
+      // Set the narrative text
+      if (narrativeData.narrative_text) {
+        setNarrative(narrativeData.narrative_text);
+      } else if (narrativeData.text) {
+        setNarrative(narrativeData.text);
+      } else {
+        setNarrative('');
+      }
+  
+      // Handle keywords with defensive programming
+      let keywords = [];
+      if (narrativeData.keywords && Array.isArray(narrativeData.keywords)) {
+        keywords = narrativeData.keywords
+          .filter(kw => kw && (typeof kw === 'string' || (kw.type === 'primary')))
+          .map(kw => typeof kw === 'string' ? kw : kw.text);
+      }
+  
       setHighlightedKeywords(keywords);
     } catch (err) {
       console.error('Narrative generation error', err);
@@ -169,37 +197,62 @@ const MemoryApp: React.FC = () => {
     return DOMPurify.sanitize(highlightedText);
   };
 
-  // For right-click (increase weight)
   const handleIncreaseWeight = async (memory_id: number, event: React.MouseEvent) => {
-    event.preventDefault(); // Prevent default context menu
+    event.preventDefault();
+    
+    const sessionId = getSessionId();
+    if (!sessionId) {
+      setError('No session ID found. Please start over from the upload page.');
+      return;
+    }
     
     try {
-      const response = await api.post(`/memories/${memory_id}/increase_weight`);
+      const response = await api.post(`/api/memories/${memory_id}/adjust_weight`, null, {
+        params: {
+          session_id: sessionId,
+          adjustment: 0.1
+        }
+      });
       
-      // Update the memory weight in the local state
+      // Update BOTH weight fields to maintain compatibility
       setMemories(prevMemories => {
-        // First update the weight of the changed memory
         const updatedMemories = prevMemories.map(memory => 
           memory.id === memory_id 
-            ? { ...memory, weight: response.data.new_weight } 
+            ? { 
+                ...memory, 
+                weight: response.data.new_weight,  // For compatibility
+                impact_weight: response.data.new_weight  // Primary field
+              } 
             : memory
         );
-        
-        // Then re-sort the memories based on current sort option
         return sortMemories(updatedMemories, sortBy);
       });
       
       console.log(`Increased weight of memory ${memory_id} to ${response.data.new_weight}`);
     } catch (error) {
       console.error('Error increasing memory weight:', error);
+      setError('Failed to increase memory weight');
     }
   };
-
-  // For left-click (decrease weight)
-  const handleDecreaseWeight = async (memory_id: number, event: React.MouseEvent) => { // Added event parameter
-    event.preventDefault(); // <--- ADD THIS LINE to prevent the context menu
+  
+  // Update the handleDecreaseWeight function
+  const handleDecreaseWeight = async (memory_id: number, event: React.MouseEvent) => {
+    event.preventDefault(); // Prevent the context menu
+    
+    const sessionId = getSessionId();
+    if (!sessionId) {
+      setError('No session ID found. Please start over from the upload page.');
+      return;
+    }
+    
     try {
-      const response = await api.post(`/memories/${memory_id}/decrease_weight`);
+      // Use the correct endpoint structure
+      const response = await api.post(`/api/memories/${memory_id}/adjust_weight`, null, {
+        params: {
+          session_id: sessionId,
+          adjustment: -0.1
+        }
+      });
   
       // Update the memory weight in the local state
       setMemories(prevMemories => {
@@ -217,6 +270,7 @@ const MemoryApp: React.FC = () => {
       console.log(`Decreased weight of memory ${memory_id} to ${response.data.new_weight}`);
     } catch (error) {
       console.error('Error decreasing memory weight:', error);
+      setError('Failed to decrease memory weight');
     }
   };
 
@@ -414,10 +468,10 @@ const MemoryApp: React.FC = () => {
                     border: '1px solid #ffffff',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                   }}
-                  title={`Memory weight: ${(memory.weight || 1.0).toFixed(1)}`}
+                  title={`Memory weight: ${(memory.impact_weight || memory.weight || 1.0).toFixed(1)}`}
                 >
                   <span className="text-xs font-semibold text-gray-800">
-                    {(memory.weight || 1.0).toFixed(1)}
+                  {(memory.impact_weight || memory.weight || 1.0).toFixed(1)}
                   </span>
                 </div>
               </div>

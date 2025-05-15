@@ -79,7 +79,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Include routers
+# Include routers - CORRECTED VERSION
 if session_router:
     app.include_router(session_router, prefix="/api/session", tags=["Session Management"])
     logger.info("Session router included at /api/session.")
@@ -87,16 +87,15 @@ else:
     logger.error("Session router not loaded.")
 
 if upload_router:
-    app.include_router(upload_router, prefix="/api/upload", tags=["File Upload & Processing"]) # Renamed tag
+    app.include_router(upload_router, prefix="/api/upload", tags=["File Upload & Processing"])
     logger.info("Upload router included at /api/upload.")
 else:
     logger.error("Upload router not loaded.")
 
 if memories_router:
-    # CORRECTED PREFIX:
-    # The frontend calls /memories/search, so the prefix here should be "/memories".
-    app.include_router(memories_router, prefix="/memories", tags=["Memory Search & Narrative"]) # Renamed tag
-    logger.info("Memories router included at /memories.")
+    # FIXED: Changed from "/memories" to "/api/memories" to match frontend expectations
+    app.include_router(memories_router, prefix="/api/memories", tags=["Memory Search & Narrative"])
+    logger.info("Memories router included at /api/memories.")
 else:
     logger.error("Memories router not loaded.")
 

@@ -213,12 +213,13 @@ export const memoryService = {
     }
   },
 
-  // Increase memory weight (convenience method)
+  // Update these convenience methods to use the correct endpoint:
   increaseMemoryWeight: async (sessionId, memoryId) => {
     try {
-      const response = await apiClient.post(`/api/memories/${memoryId}/increase_weight`, null, {
+      const response = await apiClient.post(`/api/memories/${memoryId}/adjust_weight`, null, {
         params: {
-          session_id: sessionId
+          session_id: sessionId,
+          adjustment: 0.1
         }
       });
       return response.data;
@@ -228,12 +229,12 @@ export const memoryService = {
     }
   },
 
-  // Decrease memory weight (convenience method)
   decreaseMemoryWeight: async (sessionId, memoryId) => {
     try {
-      const response = await apiClient.post(`/api/memories/${memoryId}/decrease_weight`, null, {
+      const response = await apiClient.post(`/api/memories/${memoryId}/adjust_weight`, null, {
         params: {
-          session_id: sessionId
+          session_id: sessionId,
+          adjustment: -0.1
         }
       });
       return response.data;
