@@ -416,7 +416,7 @@ def generate_narrative_endpoint(
     # 3. Create OpenAI Prompt with memory type context
     memory_type_context = "your personal" if memory_type == "user" else "public"
     prompt = f"""
-You are a creative storyteller. Based on the following {memory_type_context} memories retrieved for the query '{query}', weave a short, engaging narrative (2-4 sentences). The narrative should connect the memories thematically if possible, reflecting the mood suggested by the keywords and descriptions. Focus on the essence of the memories provided.
+You are a creative storyteller. Based on the following {memory_type_context} memories retrieved for the query '{query}', weave a short, engaging narrative (2-4 sentences). The narrative should connect the memories thematically if possible, reflecting the mood suggested by the objects, items, keywords and descriptions mentioned. Focus on the essence of the memories provided.
 
 {narrative_context}
 

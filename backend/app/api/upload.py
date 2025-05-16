@@ -405,6 +405,8 @@ class DataProcessor:
 
             # Perform YOLO object detection if available
             detected_objects = []
+            object_info_text = ""
+            
             if YOLO_AVAILABLE and self.yolo_model:
                 results = self.yolo_model(image_path, verbose=False)  # verbose=False reduces console spam
                 if results and results[0].boxes:
@@ -413,37 +415,67 @@ class DataProcessor:
                     clss = results[0].boxes.cls.cpu().numpy()    # Class IDs
                     names = results[0].names  # Class names mapping (dict: id -> name)
 
+                    # Collect object information
+                    object_names = []
+                    object_details = []
+                    
                     for i in range(len(boxes)):
                         class_id = int(clss[i])
+                        confidence = float(confs[i])
+                        class_name = names[class_id]
+                        
                         detected_objects.append({
                             "box": boxes[i].tolist(),  # [x1, y1, x2, y2]
-                            "confidence": float(confs[i]),
+                            "confidence": confidence,
                             "class_id": class_id,
-                            "class_name": names[class_id]  # Get name from mapping
+                            "class_name": class_name
                         })
+                        
+                        # Only include high-confidence detections in the prompt
+                        if confidence > 0.5:
+                            object_names.append(class_name)
+                            object_details.append(f"{class_name} ({confidence:.2f} confidence)")
+                    
+                    # Create object information text for the prompt
+                    if object_names:
+                        unique_objects = list(set(object_names))
+                        object_info_text = f"\n\nDetected objects in the image: {', '.join(unique_objects)}"
+                        detailed_objects = object_details[:5]  # Limit to top 5 for prompt brevity
+                        if detailed_objects:
+                            object_info_text += f"\nDetailed detections: {'; '.join(detailed_objects)}"
 
+            # Build the enhanced system prompt
+            system_prompt = """You are an expert image analyst specializing in emotional context. Analyze the provided image.
+            Return ONLY a valid JSON object with three keys:
+            1. 'keywords': A list of 3-5 single-word strings capturing the core emotions, atmosphere, or significant themes (e.g., ["joyful", "serene", "urban", "nostalgia", "adventure"]).
+            2. 'description': A concise one-sentence description (max 25 words) summarizing the emotional essence or narrative of the scene.
+            3. 'impact_score': A float between 0.2 (low emotional impact, mundane) and 2.0 (high emotional impact, very evocative or intense).
+            
+            Consider the context of any detected objects when analyzing the emotional content and themes."""
+            
+            # Build the user prompt with object information
+            user_prompt = "Analyze this image and provide the JSON output as instructed."
+            if object_info_text:
+                user_prompt += object_info_text
+                user_prompt += "\n\nConsider these detected objects when determining the emotional context, keywords, and description. The objects can help you understand the scene's content and emotional significance."
+            
             response = self.client.chat.completions.create(
                 model="gpt-4o",  # Or "gpt-4-vision-preview", "gpt-4-turbo"
                 messages=[
                     {
                         "role": "system",
-                        "content": """You are an expert image analyst specializing in emotional context. Analyze the provided image.
-                        Return ONLY a valid JSON object with three keys:
-                        1. 'keywords': A list of 3-5 single-word strings capturing the core emotions, atmosphere, or significant themes (e.g., ["joyful", "serene", "urban", "nostalgia", "adventure"]).
-                        2. 'description': A concise one-sentence description (max 25 words) summarizing the emotional essence or narrative of the scene.
-                        3. 'impact_score': A float between 0.2 (low emotional impact, mundane) and 2.0 (high emotional impact, very evocative or intense).
-                        Example JSON: {"keywords": ["serene", "nature", "calm"], "description": "A peaceful forest path invites quiet contemplation.", "impact_score": 1.3}"""
+                        "content": system_prompt
                     },
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": "Analyze this image and provide the JSON output as instructed."},
+                            {"type": "text", "text": user_prompt},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                         ]
                     }
                 ],
                 response_format={"type": "json_object"},
-                max_tokens=300,  # Adjust as needed
+                max_tokens=400,  # Increased to accommodate object information
                 temperature=0.5  # Control creativity/randomness
             )
 
@@ -456,11 +488,19 @@ class DataProcessor:
             weight = float(result.get('impact_score', 1.0))
             weight = max(0.2, min(2.0, weight))  # Clamp score to the defined range
 
+            # Log detailed information about the analysis
             logger.info(f"OpenAI analysis successful for {image_path.name}. Impact: {weight}")
+            if detected_objects:
+                object_names = [obj['class_name'] for obj in detected_objects if obj['confidence'] > 0.5]
+                logger.debug(f"Objects considered in analysis: {list(set(object_names))}")
+            
             return keywords, description, weight
 
         except json.JSONDecodeError as e:
-            logger.error(f"OpenAI analysis failed for {image_path.name} - Invalid JSON received: {result_json}. Error: {e}")
+            logger.error(f"OpenAI analysis failed for {image_path.name} - Invalid JSON received. Error: {e}")
+            # Log the actual response for debugging
+            if 'result_json' in locals():
+                logger.error(f"Raw response: {result_json[:200]}...")
             return ["json_error"], "Failed to parse OpenAI response.", 1.0
         except Exception as e:
             logger.error(f"OpenAI analysis failed for {image_path.name}: {e}", exc_info=True)
