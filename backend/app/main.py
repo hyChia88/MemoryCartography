@@ -179,11 +179,17 @@ logger.info(f"Static files from '{STATIC_SESSIONS_ROOT}' mounted to /api/static_
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting Uvicorn server directly from main.py for development.")
+    import os
+    
+    # Get port from environment or default to 8000
+    port = int(os.environ.get("PORT", 8000))
+    
+    print(f"Starting server on port {port}")
+    print(f"PORT environment variable: {os.environ.get('PORT', 'Not set')}")
+    
     uvicorn.run(
-        "app.main:app", # Correctly points to this file and the app instance
+        "app.main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True, # Enable auto-reload for development
-        log_level="info" # Uvicorn's own log level
+        port=port,
+        reload=False
     )
