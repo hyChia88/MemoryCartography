@@ -4,9 +4,9 @@
 data
 data/
 
-backend\app\__pycache__
-backend\app\api\__pycache__
-backend\app\core\__pycache__
-backend\app\services\__pycache__
+app\__pycache__
+app\api\__pycache__
+app\core\__pycache__
+app\services\__pycache__
 
-backend\logs
+logs
