@@ -34,3 +34,5 @@ aiohttp==3.11.18
 
 # Optional YOLO - comment out if causing issues
 ultralytics==8.3.127
+python-multipart==0.0.20
+sentence-transformers==4.1.0

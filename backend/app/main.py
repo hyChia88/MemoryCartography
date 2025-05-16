@@ -37,9 +37,12 @@ except Exception as e:
 
 try:
     from app.api.memories import router as memories_router
-except ImportError:
+    logging.info("✅ Upload router imported successfully")
+except Exception as e:
     memories_router = None
-    logging.warning("Could not import memories_router. Memories API will be unavailable.")
+    logging.error(f"❌ Could not import memories_router: {e}")
+    import traceback
+    logging.error(f"Full traceback: {traceback.format_exc()}")
 
 try:
     from app.api.session import router as session_router
