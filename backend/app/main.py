@@ -22,9 +22,18 @@ except ImportError:
 
 try:
     from app.api.upload import router as upload_router
-except ImportError:
+    logging.info("✅ Upload router imported successfully")
+except Exception as e:
     upload_router = None
-    logging.warning("Could not import upload_router. Upload API will be unavailable.")
+    logging.error(f"❌ Could not import upload_router: {e}")
+    import traceback
+    logging.error(f"Full traceback: {traceback.format_exc()}")
+    
+# try:
+#     from app.api.upload import router as upload_router
+# except ImportError:
+#     upload_router = None
+#     logging.warning("Could not import upload_router. Upload API will be unavailable.")
 
 try:
     from app.api.memories import router as memories_router
