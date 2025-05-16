@@ -2,4 +2,11 @@
 *.env
 **/.env
 data
-data/metadata
+data/
+
+backend\app\__pycache__
+backend\app\api\__pycache__
+backend\app\core\__pycache__
+backend\app\services\__pycache__
+
+backend\logs
