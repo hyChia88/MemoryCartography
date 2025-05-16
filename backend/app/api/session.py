@@ -4,7 +4,7 @@ from typing import Dict, List, Any
 import os
 import logging
 from datetime import datetime
-from app.core.session import get_session_manager
+from core.session import get_session_manager
 from fastapi.responses import FileResponse
 from pathlib import Path
 

@@ -17,7 +17,7 @@ import aiohttp
 # FastAPI and related
 # Add BackgroundTasks back
 from fastapi import APIRouter, HTTPException, File, UploadFile, Query, Depends, BackgroundTasks
-# from app.core.session import get_session_manager
+# from core.session import get_session_manager
 from pydantic import BaseModel, Field
 
 # File Handling
@@ -52,9 +52,9 @@ except ImportError:
 # --- Application-Specific Imports ---
 # Adjust these paths based on your project structure
 try:
-    from app.core.session import get_session_manager, SessionManager
+    from core.session import get_session_manager, SessionManager
 except ImportError:
-    logging.error("Failed to import session manager from app.core.session. Using dummy.")
+    logging.error("Failed to import session manager from core.session. Using dummy.")
     # Dummy Session Manager for structure - Replace with your actual implementation
     class SessionManager:
         def get_session_paths(self, session_id: str) -> Optional[Dict[str, str]]: return None

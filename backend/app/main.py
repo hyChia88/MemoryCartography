@@ -15,10 +15,10 @@ from datetime import datetime
 # Import application modules
 # It's good practice to handle potential ImportErrors if files are missing during development
 try:
-    from app.core.session import get_session_manager # Assuming get_session_manager is needed globally or by other parts
+    from core.session import get_session_manager # Assuming get_session_manager is needed globally or by other parts
 except ImportError:
     get_session_manager = None # Define a fallback or handle appropriately
-    logging.warning("Could not import get_session_manager from app.core.session.")
+    logging.warning("Could not import get_session_manager from core.session.")
 
 try:
     from api.upload import router as upload_router
