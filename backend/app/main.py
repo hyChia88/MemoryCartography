@@ -21,7 +21,7 @@ except ImportError:
     logging.warning("Could not import get_session_manager from app.core.session.")
 
 try:
-    from app.api.upload import router as upload_router
+    from api.upload import router as upload_router
     logging.info("✅ Upload router imported successfully")
 except Exception as e:
     upload_router = None
@@ -30,13 +30,13 @@ except Exception as e:
     logging.error(f"Full traceback: {traceback.format_exc()}")
     
 # try:
-#     from app.api.upload import router as upload_router
+#     from api.upload import router as upload_router
 # except ImportError:
 #     upload_router = None
 #     logging.warning("Could not import upload_router. Upload API will be unavailable.")
 
 try:
-    from app.api.memories import router as memories_router
+    from api.memories import router as memories_router
     logging.info("✅ Upload router imported successfully")
 except Exception as e:
     memories_router = None
@@ -45,7 +45,7 @@ except Exception as e:
     logging.error(f"Full traceback: {traceback.format_exc()}")
 
 try:
-    from app.api.session import router as session_router
+    from api.session import router as session_router
 except ImportError:
     session_router = None
     logging.warning("Could not import session_router. Session API will be unavailable.")
@@ -180,15 +180,23 @@ logger.info(f"Static files from '{STATIC_SESSIONS_ROOT}' mounted to /api/static_
 if __name__ == "__main__":
     import uvicorn
     import os
+    import sys
+    
+    # Add the parent directory to Python path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    if parent_dir not in sys.path:
+        sys.path.insert(0, parent_dir)
     
     # Get port from environment or default to 8000
     port = int(os.environ.get("PORT", 8000))
     
     print(f"Starting server on port {port}")
-    print(f"PORT environment variable: {os.environ.get('PORT', 'Not set')}")
+    print(f"Environment PORT: {os.environ.get('PORT', 'Not set')}")
+    print(f"Working directory: {os.getcwd()}")
     
     uvicorn.run(
-        "app.main:app",
+        app,  # Use the app object directly, not the string
         host="0.0.0.0",
         port=port,
         reload=False

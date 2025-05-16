@@ -707,7 +707,7 @@ async def update_multiple_locations(
 # Include this router in your main FastAPI application
 # Example main.py:
 # from fastapi import FastAPI
-# from app.api import memories # Assuming this file is app/api/memories.py
+# from api import memories # Assuming this file is app/api/memories.py
 #
 # app = FastAPI()
 # app.include_router(memories.router, prefix="/api/memories", tags=["memories"])

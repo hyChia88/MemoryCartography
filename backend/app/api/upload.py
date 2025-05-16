@@ -1838,7 +1838,7 @@ async def save_public_photos_to_session(session_id: str, paths: Dict[str, str], 
 # --- Include router in main app ---
 # Example main.py:
 # from fastapi import FastAPI
-# from app.api.endpoints import upload # Assuming this file is app/api/endpoints/upload.py
+# from api.endpoints import upload # Assuming this file is app/api/endpoints/upload.py
 #
 # app = FastAPI()
 # app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
