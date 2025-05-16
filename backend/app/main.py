@@ -71,6 +71,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # React development server
         "http://127.0.0.1:3000",
+        "https://memory-cartography.vercel.app",
+        "https://*.vercel.app",  
+        "http://localhost:3001",
         # "http://localhost:8000", # Usually not needed if frontend and backend are on different ports
         # "http://127.0.0.1:8000"
     ],

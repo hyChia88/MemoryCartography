@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Tuple
 
 # Third-Party Imports
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, File, UploadFile, BackgroundTasks, Body
 from pydantic import BaseModel, Field
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -128,22 +128,25 @@ def parse_memory_row(row: sqlite3.Row) -> Dict[str, Any]:
     memory.pop('resnet_embedding', None)
     return memory
 
-def fetch_candidate_memories(conn: sqlite3.Connection, memory_type: str = 'all') -> List[Dict[str, Any]]:
+def fetch_candidate_memories(conn: sqlite3.Connection, memory_type: str = 'user') -> List[Dict[str, Any]]:
     """Fetches all memories of a specific type with necessary fields for ranking."""
     memories = []
     try:
         cursor = conn.cursor()
+        
+        # Always filter by memory_type, no 'all' option
+        if memory_type not in ['user', 'public']:
+            logger.warning(f"Invalid memory_type '{memory_type}'. Defaulting to 'user'.")
+            memory_type = 'user'
+        
         sql = """
             SELECT id, filename, original_path, processed_path, title, location, date, type,
                    openai_keywords, openai_description, impact_weight, resnet_embedding, detected_objects
             FROM memories
+            WHERE type = ?
         """
-        params = []
-        if memory_type != 'all':
-            sql += " WHERE type = ?"
-            params.append(memory_type)
-
-        cursor.execute(sql, params)
+        
+        cursor.execute(sql, (memory_type,))
         rows = cursor.fetchall()
         memories = [parse_memory_row(row) for row in rows]
         logger.info(f"Fetched {len(memories)} candidate memories of type '{memory_type}'.")
@@ -175,24 +178,29 @@ def calculate_keyword_score(memory: Dict[str, Any], query: str) -> float:
 
 
 # --- API Endpoints ---
-
 @router.get("/search", response_model=List[Memory])
 def search_memories_endpoint(
     session_id: str = Query(..., description="Unique session identifier."),
     query: str = Query(..., description="Search query text."),
-    memory_type: str = Query('all', description="Type of memories: 'all', 'user', or 'public'."),
+    memory_type: str = Query('user', description="Type of memories: 'user' or 'public' (default: 'user')."),
     limit: int = Query(30, description="Maximum number of results to return."),
     sort_by: str = Query("relevance", description="Sort order: 'relevance', 'weight', 'date'.")
 ):
     """
     Searches memories using a combination of text query embedding similarity
     and keyword matching. Ranks results based on combined relevance or other criteria.
+    Only searches within the specified memory type (user or public).
     """
+    # Validate memory_type parameter
+    if memory_type not in ['user', 'public']:
+        logger.warning(f"Invalid memory_type '{memory_type}'. Defaulting to 'user'.")
+        memory_type = 'user'
+    
     logger.info(f"Search request received for session '{session_id}': query='{query}', type='{memory_type}', limit={limit}, sort_by='{sort_by}'")
 
     session_manager = get_session_manager()
     paths = session_manager.get_session_paths(session_id)
-    if not paths or "metadata" not in paths: # Check for metadata dir specifically
+    if not paths or "metadata" not in paths:
         logger.error(f"Session '{session_id}' not found or metadata path missing.")
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found or invalid configuration.")
 
@@ -204,6 +212,7 @@ def search_memories_endpoint(
         raise HTTPException(status_code=500, detail="Database connection failed.")
 
     ranked_memories = []
+
     try:
         # 1. Fetch all candidate memories from DB
         candidate_memories = fetch_candidate_memories(conn, memory_type)
@@ -347,52 +356,55 @@ def search_memories_endpoint(
 def generate_narrative_endpoint(
     session_id: str = Query(..., description="Unique session identifier."),
     query: str = Query(..., description="Original query used to find relevant memories."),
+    memory_type: str = Query('user', description="Type of memories: 'user' or 'public' (default: 'user')."),
     max_memories: int = Query(5, ge=1, le=10, description="Maximum number of top memories to use for the narrative."),
     sort_by: str = Query("relevance", description="Criteria used to select top memories: 'relevance', 'weight', 'date'.")
 ):
     """
     Generates a short narrative based on the most relevant memories found for a query.
+    Only uses memories of the specified type (user or public).
     """
-    logger.info(f"Narrative request received for session '{session_id}': query='{query}', max_memories={max_memories}, sort_by='{sort_by}'")
+    # Validate memory_type parameter
+    if memory_type not in ['user', 'public']:
+        logger.warning(f"Invalid memory_type '{memory_type}'. Defaulting to 'user'.")
+        memory_type = 'user'
+    
+    logger.info(f"Narrative request received for session '{session_id}': query='{query}', type='{memory_type}', max_memories={max_memories}, sort_by='{sort_by}'")
 
     if not openai_client:
         raise HTTPException(status_code=501, detail="Narrative generation unavailable: OpenAI client not configured.")
 
-    # 1. Perform search to get top N relevant memories
-    # We call the search logic internally. Limit might be slightly larger initially if needed.
+    # 1. Perform search to get top N relevant memories of the specified type
     try:
-        # Use the same search logic, limit to max_memories needed
+        # Use the specified memory_type instead of 'all'
         top_memories_full = search_memories_endpoint(
             session_id=session_id,
             query=query,
-            memory_type='all', # Search all types for narrative context
+            memory_type=memory_type,  # Use the specified type, not 'all'
             limit=max_memories,
             sort_by=sort_by
         )
     except HTTPException as e:
-         # If search itself fails, re-raise the exception
-         logger.error(f"Search failed during narrative generation request: {e.detail}")
-         raise e
+        logger.error(f"Search failed during narrative generation request: {e.detail}")
+        raise e
     except Exception as e:
-         logger.error(f"Unexpected error during search for narrative: {e}", exc_info=True)
-         raise HTTPException(status_code=500, detail="Failed to retrieve memories for narrative.")
-
+        logger.error(f"Unexpected error during search for narrative: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to retrieve memories for narrative.")
 
     if not top_memories_full:
-        logger.warning(f"No memories found for query '{query}' in session '{session_id}' to generate narrative.")
-        # Return a default response indicating no memories found
+        logger.warning(f"No {memory_type} memories found for query '{query}' in session '{session_id}' to generate narrative.")
         return NarrativeResponse(
             session_id=session_id,
-            narrative_text=f"I couldn't find any memories related to '{query}' to create a narrative.",
+            narrative_text=f"I couldn't find any {memory_type} memories related to '{query}' to create a narrative.",
             source_memory_ids=[],
             query=query
         )
 
-    # Convert Pydantic models back to simple dicts for processing if needed, or access attributes directly
-    top_memories = [mem.model_dump() for mem in top_memories_full] # Use model_dump for Pydantic v2
+    # Convert Pydantic models back to simple dicts for processing
+    top_memories = [mem.model_dump() for mem in top_memories_full]
 
     # 2. Prepare context for OpenAI
-    narrative_context = f"Original Query: {query}\n\nKey Memories:\n"
+    narrative_context = f"Original Query: {query}\n\nKey {memory_type.title()} Memories:\n"
     source_ids = []
     for i, mem in enumerate(top_memories):
         source_ids.append(mem['id'])
@@ -401,29 +413,30 @@ def generate_narrative_endpoint(
         narrative_context += f"- Description: {mem.get('openai_description', 'N/A')}\n"
         narrative_context += f"- Detected Objects: {', '.join(mem.get('detected_objects', []))}\n"
 
-    # 3. Create OpenAI Prompt
+    # 3. Create OpenAI Prompt with memory type context
+    memory_type_context = "your personal" if memory_type == "user" else "public"
     prompt = f"""
-    You are a creative storyteller. Based on the following memories retrieved for the query '{query}', weave a short, engaging narrative (2-4 sentences). The narrative should connect the memories thematically if possible, reflecting the mood suggested by the keywords and descriptions. Focus on the essence of the memories provided.
+You are a creative storyteller. Based on the following {memory_type_context} memories retrieved for the query '{query}', weave a short, engaging narrative (2-4 sentences). The narrative should connect the memories thematically if possible, reflecting the mood suggested by the keywords and descriptions. Focus on the essence of the memories provided.
 
-    {narrative_context}
+{narrative_context}
 
-    Generate the narrative:
-    """
+Generate the narrative:
+"""
 
     # 4. Call OpenAI API
     try:
-        logger.debug("Sending request to OpenAI for narrative generation...")
+        logger.debug(f"Sending request to OpenAI for {memory_type} narrative generation...")
         completion = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo", # Use a cost-effective model for short narratives
+            model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a creative storyteller."},
+                {"role": "system", "content": f"You are a creative storyteller crafting narratives from {memory_type_context} memories."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=150, # Limit response length
-            temperature=0.7 # Balance creativity and coherence
+            max_tokens=150,
+            temperature=0.7
         )
         narrative_text = completion.choices[0].message.content.strip()
-        logger.info(f"Narrative generated successfully for query '{query}'.")
+        logger.info(f"Narrative generated successfully for {memory_type} memories with query '{query}'.")
 
     except Exception as e:
         logger.error(f"OpenAI API call failed during narrative generation: {e}", exc_info=True)
@@ -497,6 +510,195 @@ async def adjust_memory_weight(
     except Exception as e:
         logger.error(f"Error adjusting memory weight: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+            
+@router.put("/{memory_id}/location")
+async def update_memory_location(
+    memory_id: int,
+    location: str = Body(..., embed=True),
+    session_id: str = Query(..., description="Session identifier")
+):
+    """
+    Update the location of a specific memory.
+    Allows users to manually set location for memories with "Unknown Location".
+    """
+    logger.info(f"Updating location for memory {memory_id} to '{location}' in session {session_id}")
+    
+    # Validate inputs
+    if not location or len(location.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Location cannot be empty")
+    
+    if len(location.strip()) > 200:
+        raise HTTPException(status_code=400, detail="Location too long (max 200 characters)")
+    
+    location = location.strip()
+    
+    session_manager = get_session_manager()
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        logger.error(f"Session '{session_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
+
+    # Define the database path
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail="No memories database found for session")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # First check if memory exists
+        cursor.execute("SELECT location, title FROM memories WHERE id = ?", (memory_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Memory with ID {memory_id} not found")
+        
+        old_location = row[0]
+        old_title = row[1]
+        
+        # Update the location
+        cursor.execute(
+            "UPDATE memories SET location = ? WHERE id = ?",
+            (location, memory_id)
+        )
+        
+        # Also update the title if it contains the old location
+        if old_location and old_location != "Unknown Location" and old_location in old_title:
+            new_title = old_title.replace(old_location, location)
+            cursor.execute(
+                "UPDATE memories SET title = ? WHERE id = ?",
+                (new_title, memory_id)
+            )
+        elif old_location == "Unknown Location":
+            # Extract date from title and create new title
+            date_part = old_title.split(" - ")[-1] if " - " in old_title else ""
+            new_title = f"{location} - {date_part}" if date_part else location
+            cursor.execute(
+                "UPDATE memories SET title = ? WHERE id = ?",
+                (new_title, memory_id)
+            )
+        
+        conn.commit()
+        
+        logger.info(f"Updated memory {memory_id} location from '{old_location}' to '{location}'")
+        
+        # Fetch the updated memory data
+        cursor.execute("""
+            SELECT id, filename, original_path, processed_path, title, location, date, type,
+                   openai_keywords, openai_description, impact_weight, detected_objects
+            FROM memories WHERE id = ?
+        """, (memory_id,))
+        
+        updated_row = cursor.fetchone()
+        if updated_row:
+            # Convert to dict for easier handling
+            columns = [description[0] for description in cursor.description]
+            updated_memory = dict(zip(columns, updated_row))
+            
+            # Parse JSON fields
+            updated_memory['openai_keywords'] = json.loads(updated_memory['openai_keywords']) if updated_memory['openai_keywords'] else []
+            updated_memory['detected_objects'] = json.loads(updated_memory['detected_objects']) if updated_memory['detected_objects'] else []
+            
+            return {
+                "memory_id": memory_id,
+                "old_location": old_location,
+                "new_location": location,
+                "updated_memory": updated_memory
+            }
+        else:
+            return {
+                "memory_id": memory_id,
+                "old_location": old_location,
+                "new_location": location
+            }
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error updating location for memory {memory_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error updating memory location: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+
+# Also add this to handle bulk location updates if needed
+@router.post("/update-locations")
+async def update_multiple_locations(
+    updates: List[Dict[str, Any]] = Body(...),
+    session_id: str = Query(..., description="Session identifier")
+):
+    """
+    Update locations for multiple memories at once.
+    Expected format: [{"memory_id": 1, "location": "New Location"}, ...]
+    """
+    logger.info(f"Updating locations for {len(updates)} memories in session {session_id}")
+    
+    if not updates:
+        raise HTTPException(status_code=400, detail="No updates provided")
+    
+    if len(updates) > 50:  # Limit bulk updates
+        raise HTTPException(status_code=400, detail="Too many updates at once (max 50)")
+    
+    session_manager = get_session_manager()
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
+
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail="No memories database found for session")
+    
+    results = []
+    errors = []
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        for update in updates:
+            try:
+                memory_id = update.get("memory_id")
+                location = update.get("location", "").strip()
+                
+                if not memory_id or not location:
+                    errors.append(f"Invalid update: {update}")
+                    continue
+                
+                # Update the location
+                cursor.execute(
+                    "UPDATE memories SET location = ? WHERE id = ?",
+                    (location, memory_id)
+                )
+                
+                if cursor.rowcount > 0:
+                    results.append({"memory_id": memory_id, "new_location": location, "status": "success"})
+                else:
+                    errors.append(f"Memory {memory_id} not found")
+                    
+            except Exception as e:
+                errors.append(f"Error updating memory {memory_id}: {str(e)}")
+        
+        conn.commit()
+        
+        return {
+            "updated_count": len(results),
+            "error_count": len(errors),
+            "results": results,
+            "errors": errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in bulk location update: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Bulk update failed: {str(e)}")
     finally:
         if conn:
             conn.close()

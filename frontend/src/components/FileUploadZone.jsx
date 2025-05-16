@@ -20,6 +20,8 @@ const FileUploadZone = ({ onSessionCreated }) => {
   const [error, setError] = useState(null);
   const [resetMessage, setResetMessage] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [manualLocations, setManualLocations] = useState([]);
+  const [newLocationInput, setNewLocationInput] = useState('');
 
   // Ref to track if initial processing has been attempted
   const processingAttemptedRef = useRef(false);
@@ -207,24 +209,48 @@ const FileUploadZone = ({ onSessionCreated }) => {
     }
   }, [uploadComplete, sessionId, processing, processingComplete, processFiles]); // processFiles is a stable useCallback
 
+  const addManualLocation = () => {
+    if (newLocationInput.trim() && !manualLocations.includes(newLocationInput.trim())) {
+      setManualLocations([...manualLocations, newLocationInput.trim()]);
+      setNewLocationInput('');
+    }
+  };
+  
+  const removeManualLocation = (locationToRemove) => {
+    setManualLocations(manualLocations.filter(loc => loc !== locationToRemove));
+  };
+
   const fetchPublicPhotos = async () => {
-    if (!sessionId || !detectedLocations.length) {
-      console.log('fetchPublicPhotos: Prerequisites not met.');
+    if (!sessionId) {
+      console.log('fetchPublicPhotos: No session id');
       setError('No session or detected locations to fetch public photos.');
       return;
     }
+    
+    // Combine detected locations with manual locations
+    const allLocations = [...detectedLocations, ...manualLocations];
+    
+    if (allLocations.length === 0) {
+      console.log('fetchPublicPhotos: No locations available');
+      setError('No locations available to fetch public photos. Please add locations manually.');
+      return;
+    }
+    
     setFetchingPublic(true);
     setError(null);
-    console.log(`fetchPublicPhotos: Fetching for session ${sessionId}, locations: ${detectedLocations.join(', ')}`);
+    console.log(`fetchPublicPhotos: Fetching for session ${sessionId}, locations: ${allLocations.join(', ')}`);
+    
     try {
       const response = await axios.post(`${API_BASE_URL}/api/upload/fetch-public`, {
         session_id: sessionId,
         max_photos_per_location: 10,
-        total_limit: 100
+        total_limit: 100,
+        // Send all locations to backend
+        custom_locations: allLocations
       });
       console.log('Fetch public photos response:', response);
       if (response.status === 200 && response.data.status === "public_fetch_started") {
-        console.log('Public photo fetch initiated. Polling for completion (not fully implemented in this snippet).');
+        console.log('Public photo fetch initiated.');
         setCurrentStep(4);
         setPublicFetchComplete(true);
       } else {
@@ -303,16 +329,134 @@ const FileUploadZone = ({ onSessionCreated }) => {
           <div className="flex-1 flex items-center px-2">
             <div className={`h-1 w-full ${currentStep >= 3 ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
           </div>
-          {/* Step 3: Location/Public */}
-          <div className={`flex flex-col items-center ${currentStep >= 3 ? 'text-blue-600 font-semibold' : 'text-gray-400'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 border-2 ${currentStep >= 3 ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-100 border-gray-300'}`}>
-              <span>3</span>
+          {/* Step 3: Locations and Public Photos UI */}
+          {currentStep === 3 && (
+            <div className="border rounded p-6 shadow-md">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Enhance Your Map</h2>
+              
+              {/* Manual Location Input */}
+              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-lg font-medium mb-3 text-blue-800">Add Locations Manually</h3>
+                <p className="text-sm text-blue-700 mb-3">
+                  Add any locations you'd like to fetch public photos for, even if they weren't detected automatically.
+                </p>
+                
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newLocationInput}
+                    onChange={(e) => setNewLocationInput(e.target.value)}
+                    placeholder="Enter location (e.g., Kuala Lumpur, Paris, Tokyo)"
+                    className="flex-1 px-3 py-2 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => e.key === 'Enter' && addManualLocation()}
+                  />
+                  <button
+                    onClick={addManualLocation}
+                    disabled={!newLocationInput.trim()}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Add
+                  </button>
+                </div>
+                
+                {/* Manual Locations List */}
+                {manualLocations.length > 0 && (
+                  <div>
+                    <p className="text-sm text-blue-700 mb-2">Manually added locations:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {manualLocations.map((location, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          {location}
+                          <button
+                            onClick={() => removeManualLocation(location)}
+                            className="ml-2 text-blue-600 hover:text-blue-800"
+                            title="Remove location"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Detected Locations */}
+              {detectedLocations.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-3 text-gray-800">Automatically Detected Locations</h3>
+                  <p className="mb-3 text-gray-700">
+                    We found photos related to these locations:
+                  </p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {detectedLocations.map((location, index) => (
+                      <span key={index} className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                        {location}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Combined Summary */}
+              {(detectedLocations.length > 0 || manualLocations.length > 0) ? (
+                <div className="mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-2">
+                      Public photos will be fetched for {detectedLocations.length + manualLocations.length} locations:
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {[...detectedLocations, ...manualLocations].map((location, index) => (
+                        <span key={index} className="inline-block bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm">
+                          {location}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <p className="mt-4 text-gray-700">
+                    Would you like to add related public photos to enrich your memory map?
+                  </p>
+                  <div className="bg-gray-50 p-4 rounded mt-3 text-sm text-gray-600">
+                    Public photos are temporarily sourced to provide broader context and will not be stored with your personal data.
+                  </div>
+                  
+                  <div className="flex gap-3 flex-wrap mt-4">
+                    <button
+                      onClick={fetchPublicPhotos}
+                      disabled={fetchingPublic}
+                      className="bg-indigo-500 text-white px-6 py-2 rounded disabled:opacity-50 hover:bg-indigo-600 transition-colors flex-grow"
+                    >
+                      {fetchingPublic ? 'Fetching...' : `Fetch Public Photos (${detectedLocations.length + manualLocations.length} locations)`}
+                    </button>
+                    <button
+                      onClick={skipPublicPhotos}
+                      disabled={fetchingPublic}
+                      className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300 transition-colors flex-grow"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-6">
+                  <p className="mb-4 text-gray-700">
+                    No locations were automatically detected. You can still add locations manually above to fetch public photos,
+                    or skip this step to continue with your personal photos only.
+                  </p>
+                  <button
+                    onClick={skipPublicPhotos}
+                    className="bg-blue-500 text-white px-6 py-2 rounded w-full hover:bg-blue-600 transition-colors"
+                  >
+                    Continue with Personal Photos Only
+                  </button>
+                </div>
+              )}
             </div>
-            <span className="text-xs">Enhance</span>
-          </div>
-          <div className="flex-1 flex items-center px-2">
-            <div className={`h-1 w-full ${currentStep >= 4 ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
-          </div>
+          )}
           {/* Step 4: Complete */}
           <div className={`flex flex-col items-center ${currentStep >= 4 ? 'text-blue-600 font-semibold' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 border-2 ${currentStep >= 4 ? 'bg-blue-500 text-white border-blue-500' : 'bg-gray-100 border-gray-300'}`}>

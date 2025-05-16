@@ -9,11 +9,16 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
+import requests
+import asyncio
+import aiohttp
+
 # Third-Party Imports
 # FastAPI and related
 # Add BackgroundTasks back
 from fastapi import APIRouter, HTTPException, File, UploadFile, Query, Depends, BackgroundTasks
-from pydantic import BaseModel
+# from app.core.session import get_session_manager
+from pydantic import BaseModel, Field
 
 # File Handling
 import aiofiles
@@ -229,8 +234,10 @@ class DataProcessor:
                                 # Reverse geocode coordinates
                                 geo_location = self.geolocator.reverse((latitude, longitude), exactly_one=True, timeout=10)
                                 if geo_location:
-                                    location = geo_location.address
-                                    logger.info(f"Geocoded location: {location} for {image_path.name}")
+                                    # Extract city from the full address
+                                    location = self._extract_city_from_address(geo_location.address)
+                                    logger.info(f"Geocoded location: {geo_location.address}")
+                                    logger.info(f"Extracted city: {location} for {image_path.name}")
                                 else:
                                     logger.warning(f"Could not reverse geocode coordinates for {image_path.name}")
                             else:
@@ -262,25 +269,117 @@ class DataProcessor:
         logger.info(f"Final metadata for {image_path.name}: location='{location}', date='{date}'")
         return location, date
 
+    def _extract_city_from_address(self, address: str) -> str:
+        """Extract city name from a full geocoded address."""
+        if not address:
+            return "Unknown Location"
+        
+        # Split the address by commas
+        address_parts = [part.strip() for part in address.split(',')]
+        
+        # Common patterns for different address formats:
+        # Example: "Street, District, City, State, Country"
+        # Example: "Street, City, State, Country" 
+        # Example: "City, State, Country"
+        
+        # List of common non-city terms to skip
+        non_city_terms = [
+            'unnamed road', 'jalan', 'street', 'road', 'avenue', 'boulevard',
+            'block', 'lot', 'unit', 'floor', 'building', 'tower', 'plaza',
+            'complex', 'mall', 'center', 'centre', 'district', 'zone', 'sector',
+            'postcode', 'postal code', 'zip', 'malaysia', 'singapore', 'thailand',
+            'indonesia', 'philippines', 'federal territory'
+        ]
+        
+        # Look for city-like parts (usually 2nd to 4th part from the end)
+        for i in range(1, min(4, len(address_parts))):
+            candidate = address_parts[-i-1].lower()
+            
+            # Skip if it's too short or contains non-city terms
+            if len(candidate) < 3:
+                continue
+                
+            if any(term in candidate for term in non_city_terms):
+                continue
+                
+            # Skip if it looks like a postcode (contains numbers)
+            if any(char.isdigit() for char in candidate):
+                continue
+                
+            # This looks like a city
+            city_name = address_parts[-i-1].strip()
+            
+            # Clean up common city name patterns
+            if ',' in city_name:
+                city_name = city_name.split(',')[0].strip()
+                
+            return city_name.title()
+        
+        # If no good candidate found, try to get something meaningful
+        # Look for known city patterns in the full address
+        known_cities = [
+            'kuala lumpur', 'kl', 'petaling jaya', 'pj', 'shah alam', 'subang jaya',
+            'klang', 'ampang', 'cheras', 'kepong', 'bangsar', 'mont kiara',
+            'singapore', 'johor bahru', 'penang', 'ipoh', 'malacca', 'kota kinabalu'
+        ]
+        
+        address_lower = address.lower()
+        for city in known_cities:
+            if city in address_lower:
+                if city == 'kl':
+                    return 'Kuala Lumpur'
+                elif city == 'pj':
+                    return 'Petaling Jaya'
+                else:
+                    return city.title()
+        
+        # Fallback: return the second-to-last part if available, otherwise first meaningful part
+        if len(address_parts) >= 2:
+            candidate = address_parts[-2].strip()
+            # Clean up the candidate
+            if any(term in candidate.lower() for term in non_city_terms):
+                # Try the first meaningful part instead
+                for part in address_parts:
+                    part_clean = part.strip().lower()
+                    if (len(part_clean) >= 3 and 
+                        not any(term in part_clean for term in non_city_terms) and
+                        not any(char.isdigit() for char in part_clean)):
+                        return part.strip().title()
+            return candidate.title()
+        
+        # Last resort: return first part of address
+        return address_parts[0].strip().title() if address_parts else "Unknown Location"
+
     def _extract_location_from_filename(self, image_path: Path) -> str:
         """Extract location from filename patterns."""
         filename_lower = image_path.stem.lower()
         
-        # Common location patterns in filenames
+        # Common location patterns in filenames - updated to return city names
         location_patterns = {
-            'beach': 'Beach Area',
-            'park': 'Park',
-            'home': 'Home',
-            'office': 'Office',
-            'garden': 'Garden',
+            'kl': 'Kuala Lumpur',
+            'kuala_lumpur': 'Kuala Lumpur',
+            'petaling_jaya': 'Petaling Jaya',
+            'pj': 'Petaling Jaya',
+            'shah_alam': 'Shah Alam',
+            'subang': 'Subang Jaya',
+            'singapore': 'Singapore',
+            'penang': 'Penang',
+            'ipoh': 'Ipoh',
+            'johor': 'Johor Bahru',
+            'malacca': 'Malacca',
+            'beach': 'Coastal Area',
+            'park': 'City Park',
+            'home': 'Residential Area',
+            'office': 'Business District',
+            'garden': 'Garden Area',
             'city': 'City Center',
             'downtown': 'Downtown',
-            'mall': 'Shopping Mall',
-            'restaurant': 'Restaurant',
-            'cafe': 'Cafe',
-            'hotel': 'Hotel',
-            'vacation': 'Vacation Spot',
-            'trip': 'Travel Location',
+            'mall': 'Shopping District',
+            'restaurant': 'Dining Area',
+            'cafe': 'Cafe Area',
+            'hotel': 'Hotel District',
+            'vacation': 'Tourist Area',
+            'trip': 'Travel Destination',
             'holiday': 'Holiday Destination'
         }
         
@@ -291,7 +390,7 @@ class DataProcessor:
         
         # If no pattern matches, return Unknown Location
         return "Unknown Location"
-        
+
     def analyze_image_emotional_intensity(self, image_path: Path) -> tuple[List[str], str, float]:
         """Analyzes image using OpenAI Vision API for keywords, description, and impact, incorporating YOLO object detection if applicable."""
         if not self.client:
@@ -722,6 +821,13 @@ class ProcessedPhotoSummary(BaseModel):
     date_range: Dict[str, Optional[str]]  # {"earliest": "2023-01-01", "latest": "2023-12-31"}
     top_keywords: List[Dict[str, Any]]  # [{"keyword": "beach", "count": 5}, ...]
     average_impact_weight: float
+
+# Add this near the other Pydantic models at the top of the file
+class FetchPublicRequest(BaseModel):
+    session_id: str
+    max_photos_per_location: int = Field(default=10, ge=1, le=20)
+    total_limit: int = Field(default=100, ge=1, le=200)
+    custom_locations: Optional[List[str]] = Field(default=None, description="Custom locations added by user")
 
 
 # --- FastAPI Endpoints ---
@@ -1334,6 +1440,357 @@ async def get_single_processed_photo(session_id: str, photo_id: int, include_emb
     except Exception as e:
         logger.error(f"Error getting photo {photo_id} for {session_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+@router.post("/fetch-public")
+async def fetch_public_photos(request: FetchPublicRequest):
+    """
+    Fetch public photos from Unsplash based on detected locations in the session
+    and/or custom locations provided by the user.
+    """
+    session_id = request.session_id
+    max_photos_per_location = request.max_photos_per_location
+    total_limit = request.total_limit
+    custom_locations = request.custom_locations
+    
+    logger.info(f"Fetching public photos for session: {session_id}")
+    logger.info(f"Custom locations provided: {custom_locations}")
+    
+    session_manager = get_session_manager()
+    if not session_manager:
+        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
+    
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    
+    # Get detected locations from the database
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    detected_locations = []
+    
+    if db_path.exists():
+        conn = None
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            # Get unique locations from user memories
+            cursor.execute("""
+                SELECT DISTINCT location FROM memories 
+                WHERE type = 'user' AND location != 'Unknown Location' AND location IS NOT NULL
+            """)
+            
+            rows = cursor.fetchall()
+            detected_locations = [row[0].split(',')[0].strip() for row in rows]  # Get primary location part
+            detected_locations = list(set(detected_locations))  # Remove duplicates
+            
+            logger.info(f"Found {len(detected_locations)} detected locations: {detected_locations}")
+            
+        except sqlite3.Error as e:
+            logger.error(f"Database error: {e}")
+            # Continue with empty detected_locations
+        finally:
+            if conn:
+                conn.close()
+    
+    # Combine detected locations with custom locations
+    all_locations = detected_locations.copy()
+    
+    if custom_locations:
+        # Clean and validate custom locations
+        cleaned_custom = []
+        for loc in custom_locations:
+            if loc and isinstance(loc, str) and loc.strip():
+                clean_loc = loc.strip()
+                if clean_loc not in all_locations:  # Avoid duplicates
+                    cleaned_custom.append(clean_loc)
+                    all_locations.append(clean_loc)
+        
+        logger.info(f"Added {len(cleaned_custom)} custom locations: {cleaned_custom}")
+    
+    # Remove duplicates and filter out empty strings
+    all_locations = list(set([loc for loc in all_locations if loc]))
+    
+    if not all_locations:
+        return {
+            "status": "no_locations",
+            "message": "No locations found to fetch public photos. Please add locations manually.",
+            "detected_locations": detected_locations,
+            "custom_locations": custom_locations or [],
+            "total_locations": 0,
+            "photos_fetched": 0
+        }
+    
+    logger.info(f"Total locations to process: {len(all_locations)} - {all_locations}")
+    
+    # Initialize the public photo fetcher
+    try:
+        fetcher = PublicPhotoFetcher()  # Use the enhanced fetcher
+        
+        # Fetch photos for each location
+        all_photos = []
+        photos_per_location = min(max_photos_per_location, total_limit // len(all_locations))
+        
+        for location in all_locations:
+            try:
+                logger.info(f"Fetching photos for location: {location}")
+                photos = await fetcher.fetch_photos_for_location(
+                    location, 
+                    limit=photos_per_location
+                )
+                
+                # Tag photos with whether they came from detected or custom locations
+                for photo in photos:
+                    photo['source_type'] = 'detected' if location in detected_locations else 'custom'
+                    photo['source_location'] = location
+                
+                all_photos.extend(photos)
+                
+                # Check total limit
+                if len(all_photos) >= total_limit:
+                    all_photos = all_photos[:total_limit]
+                    break
+                    
+            except Exception as e:
+                logger.error(f"Error fetching photos for {location}: {e}")
+                continue
+        
+        # Save photos to the session
+        if all_photos:
+            await save_public_photos_to_session(session_id, paths, all_photos)
+        
+        return {
+            "status": "public_fetch_started" if all_photos else "no_photos_found",
+            "message": f"Successfully fetched {len(all_photos)} public photos from {len(all_locations)} locations.",
+            "detected_locations": detected_locations,
+            "custom_locations": custom_locations or [],
+            "total_locations": len(all_locations),
+            "photos_fetched": len(all_photos),
+            "photos_per_location": photos_per_location
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in public photo fetching: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error fetching public photos: {str(e)}")
+
+class PublicPhotoFetcher:
+    """Fetches public photos from various sources based on location."""
+    
+    def __init__(self):
+        # Get your Unsplash API key from environment variables
+        # Sign up at https://unsplash.com/developers to get a free API key
+        self.unsplash_api_key = os.getenv("UNSPLASH_ACCESS_KEY")
+        self.unsplash_base_url = "https://api.unsplash.com"
+        
+        if not self.unsplash_api_key:
+            logger.warning("UNSPLASH_ACCESS_KEY not found. Public photo fetching will be limited.")
+    
+    async def fetch_photos_for_location(self, location: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Fetch photos for a specific location from Unsplash."""
+        photos = []
+        
+        if self.unsplash_api_key:
+            photos = await self._fetch_from_unsplash(location, limit)
+        
+        # Fallback to placeholder images if no API key or no results
+        if not photos:
+            photos = self._generate_placeholder_photos(location, limit)
+        
+        return photos
+    
+    async def _fetch_from_unsplash(self, location: str, limit: int) -> List[Dict[str, Any]]:
+        """Fetch photos from Unsplash API."""
+        photos = []
+        
+        try:
+            headers = {
+                "Authorization": f"Client-ID {self.unsplash_api_key}",
+                "Accept-Version": "v1"
+            }
+            
+            # Search for photos with location-based queries
+            search_queries = [
+                f"{location} city",
+                f"{location} architecture",
+                f"{location} landmarks",
+                f"{location} street",
+                location
+            ]
+            
+            async with aiohttp.ClientSession() as session:
+                for query in search_queries:
+                    if len(photos) >= limit:
+                        break
+                    
+                    url = f"{self.unsplash_base_url}/search/photos"
+                    params = {
+                        "query": query,
+                        "per_page": min(10, limit - len(photos)),
+                        "orientation": "landscape",
+                        "order_by": "relevant"
+                    }
+                    
+                    async with session.get(url, headers=headers, params=params) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            
+                            for photo in data.get("results", []):
+                                if len(photos) >= limit:
+                                    break
+                                
+                                # Extract photo information
+                                photo_info = {
+                                    "url": photo["urls"]["regular"],
+                                    "thumbnail_url": photo["urls"]["small"],
+                                    "title": photo.get("description") or photo.get("alt_description") or f"{location} - Public Photo",
+                                    "location": location,
+                                    "attribution": {
+                                        "photographer": photo["user"]["name"],
+                                        "photographer_url": photo["user"]["links"]["html"],
+                                        "unsplash_url": photo["links"]["html"],
+                                        "unsplash_id": photo["id"]
+                                    },
+                                    "width": photo["width"],
+                                    "height": photo["height"],
+                                    "search_query": query
+                                }
+                                photos.append(photo_info)
+                        else:
+                            logger.warning(f"Unsplash API error for query '{query}': {response.status}")
+                
+                logger.info(f"Fetched {len(photos)} photos from Unsplash for {location}")
+                
+        except Exception as e:
+            logger.error(f"Error fetching from Unsplash for {location}: {e}")
+        
+        return photos
+    
+    def _generate_placeholder_photos(self, location: str, limit: int) -> List[Dict[str, Any]]:
+        """Generate placeholder photos when real photos are not available."""
+        photos = []
+        
+        # Use placeholder image services
+        placeholder_services = [
+            "https://picsum.photos/800/600",
+            "https://source.unsplash.com/800x600",
+            "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee"
+        ]
+        
+        for i in range(min(limit, 3)):  # Limit placeholder photos
+            service_url = placeholder_services[i % len(placeholder_services)]
+            
+            photo_info = {
+                "url": f"{service_url}?sig={i}",
+                "thumbnail_url": f"{service_url}?sig={i}",
+                "title": f"{location} - Placeholder Photo {i+1}",
+                "location": location,
+                "attribution": {
+                    "photographer": "Placeholder Service",
+                    "photographer_url": "#",
+                    "source": "Placeholder",
+                    "note": "This is a placeholder image"
+                },
+                "width": 800,
+                "height": 600,
+                "search_query": location,
+                "is_placeholder": True
+            }
+            photos.append(photo_info)
+        
+        logger.info(f"Generated {len(photos)} placeholder photos for {location}")
+        return photos
+
+
+# Add this function to save photos to the session
+
+async def save_public_photos_to_session(session_id: str, paths: Dict[str, str], photos: List[Dict[str, Any]]):
+    """Save public photos to the session database and download images."""
+    logger.info(f"Saving {len(photos)} public photos to session {session_id}")
+    
+    # Prepare directories
+    public_raw_dir = Path(paths["raw_public"])
+    public_processed_dir = Path(paths["processed_public"])
+    os.makedirs(public_raw_dir, exist_ok=True)
+    os.makedirs(public_processed_dir, exist_ok=True)
+    
+    # Database connection
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    conn = None
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Download and save photos
+        async with aiohttp.ClientSession() as session:
+            for i, photo in enumerate(photos):
+                try:
+                    # Generate filename
+                    filename = f"public_{i+1:04d}.jpg"
+                    file_path = public_processed_dir / filename
+                    
+                    # Download image if not placeholder
+                    if not photo.get("is_placeholder", False):
+                        async with session.get(photo["url"]) as response:
+                            if response.status == 200:
+                                with open(file_path, 'wb') as f:
+                                    f.write(await response.read())
+                            else:
+                                logger.warning(f"Failed to download {photo['url']}")
+                                continue
+                    else:
+                        # For placeholders, just create a small info file
+                        with open(file_path.with_suffix('.txt'), 'w') as f:
+                            f.write(f"Placeholder for {photo['location']}")
+                    
+                    # Create database entry with source information
+                    title = f"{photo['location']} - {photo['title']}"
+                    openai_keywords = [photo['location'], 'public', 'landmark', 'city']
+                    
+                    # Add source type to keywords
+                    source_type = photo.get('source_type', 'detected')
+                    openai_keywords.append(f"{source_type}_location")
+                    
+                    # Include attribution and source info in description
+                    attribution = photo.get('attribution', {})
+                    description_parts = [photo.get('title', '')]
+                    if attribution.get('photographer'):
+                        description_parts.append(f"Photo by {attribution['photographer']}")
+                    if source_type == 'custom':
+                        description_parts.append(f"From manually added location: {photo.get('source_location', photo['location'])}")
+                    
+                    attribution_text = " | ".join(filter(None, description_parts))
+                    
+                    cursor.execute('''
+                        INSERT INTO memories 
+                        (filename, original_path, processed_path, title, location, date, type, 
+                         openai_keywords, openai_description, impact_weight, detected_objects)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        filename,
+                        str(file_path),  # original_path
+                        f"processed/public/{filename}",  # processed_path
+                        title,
+                        photo['location'],
+                        datetime.now().strftime('%Y-%m-%d'),
+                        'public',
+                        json.dumps(openai_keywords),
+                        attribution_text,
+                        1.0,  # Default weight
+                        json.dumps(['landmark', 'public_photo', source_type])
+                    ))
+                    
+                except Exception as e:
+                    logger.error(f"Error saving public photo {i}: {e}")
+                    continue
+        
+        conn.commit()
+        logger.info(f"Successfully saved {len(photos)} public photos to database")
+        
+    except Exception as e:
+        logger.error(f"Error saving public photos: {e}", exc_info=True)
     finally:
         if conn:
             conn.close()

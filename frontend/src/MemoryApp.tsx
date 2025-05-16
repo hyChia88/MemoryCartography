@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DOMPurify from 'dompurify';
 import ResetWeightsButton from './components/ResetWeightsButton';
+import MemoryList from './components/MemoryList';
 
 // Update the Memory interface in MemoryApp.tsx
 interface Memory {
@@ -79,6 +80,37 @@ const MemoryApp: React.FC = () => {
   const getSessionId = (): string | null => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('session');
+  };
+
+  const handleLocationUpdate = (memoryId: number, newLocation: string, updatedMemory?: any) => {
+    setMemories(prevMemories => {
+      const updatedMemories = prevMemories.map(memory => {
+        if (memory.id === memoryId) {
+          if (updatedMemory) {
+            // Use the complete updated memory from backend
+            return {
+              ...memory,
+              ...updatedMemory,
+              // Ensure compatibility fields
+              weight: updatedMemory.impact_weight || memory.weight,
+              keywords: updatedMemory.openai_keywords || memory.keywords
+            };
+          } else {
+            // Just update the location
+            return {
+              ...memory,
+              location: newLocation,
+              // Update title if it contained the old location
+              title: memory.location === 'Unknown Location' 
+                ? `${newLocation} - ${memory.date}` 
+                : memory.title.replace(memory.location, newLocation)
+            };
+          }
+        }
+        return memory;
+      });
+      return updatedMemories;
+    });
   };
 
   // Function to sort memories client-side
@@ -385,49 +417,6 @@ const MemoryApp: React.FC = () => {
           </div>
         )}
   
-        {/* Sort Options */}
-        <div className="mb-4 flex justify-center">
-          {/* <div className="bg-gray-100 rounded-full p-1 flex">
-            <button
-              onClick={() => handleSortChange('weight')}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                sortBy === 'weight'
-                  ? 'bg-gray-400 text-gray-800'
-                  : 'text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Sort by Weight
-            </button>
-            <button
-              onClick={() => handleSortChange('date')}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                sortBy === 'date'
-                  ? 'bg-gray-400 text-gray-800'
-                  : 'text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Sort by Date
-            </button>
-            <button
-              onClick={() => handleSortChange('relevance')}
-              className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                sortBy === 'relevance'
-                  ? 'bg-gray-400 text-gray-800'
-                  : 'text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Sort by Relevance
-            </button>
-          </div> */}
-        </div>
-  
-        {/* Error Handling */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
-  
         {/* Narrative Display */}
         {narrative && (
           <div className="bg-gray-50 p-4 rounded mb-4">
@@ -439,62 +428,21 @@ const MemoryApp: React.FC = () => {
           </div>
         )}
   
-        {/* Memory List */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {memories.map((memory) => (
-            <div
-              key={memory.id}
-              className="bg-white border rounded overflow-hidden hover:shadow-lg transition-shadow relative"
-              // Pass the event 'e' to handleDecreaseWeight
-              onContextMenu={(e) => handleDecreaseWeight(memory.id, e)}
-              onClick={(e) => handleIncreaseWeight(memory.id, e)} // This already prevents default left-click actions
-            >
-              {/* Image Thumbnail */}
-              <div className="w-full h-40 bg-gray-200 relative overflow-hidden">
-                <img
-                  src={getThumbnailUrl(memory)}
-                  alt={memory.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Fallback for failed image loads
-                    (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
-                  }}
-                />
-                {/* Weight indicator positioned on top of image */}
-                <div 
-                  className="absolute top-2 right-2 h-6 w-6 rounded-full flex items-center justify-center"
-                  style={{ 
-                    backgroundColor: `rgba(255, 204, 0, ${(memory.weight || 1.0) / 2})`,
-                    border: '1px solid #ffffff',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                  }}
-                  title={`Memory weight: ${(memory.impact_weight || memory.weight || 1.0).toFixed(1)}`}
-                >
-                  <span className="text-xs font-semibold text-gray-800">
-                  {(memory.impact_weight || memory.weight || 1.0).toFixed(1)}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Memory Details */}
-              <div className="p-3">
-                <h2 className="font-bold text-gray-800 truncate">{memory.title}</h2>
-                <p className="text-sm text-gray-600 truncate">{memory.location}</p>
-                <p className="text-sm text-gray-600">{memory.date}</p>
-                <div className="mt-2">
-                  {memory.keywords?.slice(0, 3).map((keyword) => (
-                    <span
-                      key={keyword}
-                      className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded mr-1 mb-1"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* REPLACE the manual memory list rendering with MemoryList component */}
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-500"></div>
+          </div>
+        ) : (
+          <MemoryList
+            memories={memories}
+            onIncreaseWeight={handleIncreaseWeight}
+            onDecreaseWeight={handleDecreaseWeight}
+            getThumbnailUrl={getThumbnailUrl}
+            onLocationUpdate={handleLocationUpdate}
+            sessionId={getSessionId() || ''}
+          />
+        )}
         
         {/* No results message */}
         {memories.length === 0 && searchTerm && !loading && (
@@ -505,7 +453,9 @@ const MemoryApp: React.FC = () => {
         
         {/* Usage instructions */}
         <div className="mt-4 text-xs text-gray-500 text-center">
-          Right-click on a memory to increase its weight • Left-click to decrease weight
+          Left-click on a memory to increase its weight • Right-click to decrease weight
+          <br />
+          Click on any location to edit it
         </div>
       </div>
     </div>

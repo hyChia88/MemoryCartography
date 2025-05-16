@@ -29,6 +29,8 @@ python-dotenv    # For loading .env files (like API keys)
 numpy            # Numerical operations (dependency for many ML libs)
 tqdm             # Progress bars (used in DataProcessor)
 
+aiohttp
+
 # Removed:
 # - pydantic (FastAPI manages this dependency)
 # - SQLAlchemy (Using built-in sqlite3)
