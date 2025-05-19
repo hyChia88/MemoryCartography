@@ -153,7 +153,8 @@ def read_root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    """Health check endpoint for Railway."""
+    return {"status": "healthy", "time": datetime.now().isoformat()}
 
 # Schedule regular cleanup - This endpoint allows manual triggering.
 # For automatic periodic cleanup, you'd typically use a library like FastAPI-Scheduler or an external cron job.
