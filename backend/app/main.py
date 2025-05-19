@@ -182,22 +182,22 @@ if __name__ == "__main__":
     import uvicorn
     import os
     import sys
-    
+   
     # Add the parent directory to Python path
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
     if parent_dir not in sys.path:
         sys.path.insert(0, parent_dir)
-    
-    # Get port from environment or default to 8000
-    port = int(os.environ.get("PORT", 8000))
-    
+   
+    # Get port from environment or default to 8080
+    port = int(os.environ.get("PORT", 8080))  # Changed from 8000 to 8080
+   
     print(f"Starting server on port {port}")
     print(f"Environment PORT: {os.environ.get('PORT', 'Not set')}")
     print(f"Working directory: {os.getcwd()}")
-    
+   
     uvicorn.run(
-        app,  # Use the app object directly, not the string
+        app,
         host="0.0.0.0",
         port=port,
         reload=False
