@@ -1170,320 +1170,6 @@ async def get_processing_status(session_id: str):
             logger.debug("Database connection closed.")
 
 # ================
-@router.get("/processed/{session_id}", response_model=ProcessedPhotosResponse)
-async def get_processed_photos(
-    session_id: str,
-    photo_type: str = Query('all', description="Filter by type: 'all', 'user', or 'public'"),
-    limit: int = Query(50, ge=1, le=200, description="Maximum number of photos to return"),
-    offset: int = Query(0, ge=0, description="Number of photos to skip"),
-    include_embeddings: bool = Query(True, description="Include ResNet embeddings in response")
-):
-    """
-    Get details of all processed photos for a session.
-    """
-    logger.info(f"Received request for processed photos: session_id={session_id}, type={photo_type}, limit={limit}")
-    
-    session_manager = get_session_manager()
-    if not session_manager:
-        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
-    
-    paths = session_manager.get_session_paths(session_id)
-    if not paths or "metadata" not in paths:
-        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
-    
-    # Check database exists
-    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
-    if not db_path.exists():
-        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
-    
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        # Build query based on photo_type filter
-        base_query = """
-            SELECT id, filename, original_path, processed_path, title, location, date, type,
-                   openai_keywords, openai_description, impact_weight, detected_objects
-        """
-        if include_embeddings:
-            base_query += ", resnet_embedding"
-        
-        base_query += " FROM memories"
-        
-        params = []
-        if photo_type != 'all':
-            base_query += " WHERE type = ?"
-            params.append(photo_type)
-        
-        # Add ordering and pagination
-        base_query += " ORDER BY impact_weight DESC, date DESC LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
-        
-        cursor.execute(base_query, params)
-        rows = cursor.fetchall()
-        
-        # Get total counts
-        cursor.execute("SELECT type, COUNT(*) FROM memories GROUP BY type")
-        counts = {row[0]: row[1] for row in cursor.fetchall()}
-        total_count = sum(counts.values())
-        user_count = counts.get('user', 0)
-        public_count = counts.get('public', 0)
-        
-        # Process results
-        photos = []
-        base_static_path = f"/api/session/static/{session_id}"
-        
-        for row in rows:
-            # Parse JSON fields
-            keywords = json.loads(row['openai_keywords']) if row['openai_keywords'] else []
-            objects = json.loads(row['detected_objects']) if row['detected_objects'] else []
-            
-            # Handle embedding if requested
-            embedding = None
-            if include_embeddings and 'resnet_embedding' in row.keys() and row['resnet_embedding']:
-                try:
-                    embedding = json.loads(row['resnet_embedding'])
-                except json.JSONDecodeError:
-                    embedding = None
-            
-            # Construct image URL
-            img_url = None
-            if row['processed_path']:
-                # Extract type and filename from processed_path
-                path_parts = Path(row['processed_path']).parts
-                if len(path_parts) >= 2:
-                    img_type = path_parts[-2]  # 'user' or 'public'
-                    img_filename = path_parts[-1]
-                    img_url = f"{base_static_path}/{img_type}/{img_filename}"
-            
-            photo_detail = ProcessedPhotoDetail(
-                id=row['id'],
-                filename=row['filename'],
-                original_path=row['original_path'],
-                processed_path=row['processed_path'],
-                title=row['title'],
-                location=row['location'],
-                date=row['date'],
-                type=row['type'],
-                openai_keywords=keywords,
-                openai_description=row['openai_description'],
-                impact_weight=row['impact_weight'],
-                detected_objects=objects,
-                resnet_embedding=embedding,
-                image_url=img_url
-            )
-            photos.append(photo_detail)
-        
-        return ProcessedPhotosResponse(
-            session_id=session_id,
-            total_count=total_count,
-            user_count=user_count,
-            public_count=public_count,
-            photos=photos
-        )
-        
-    except sqlite3.Error as e:
-        logger.error(f"Database error getting processed photos for {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    except Exception as e:
-        logger.error(f"Error getting processed photos for {session_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-    finally:
-        if conn:
-            conn.close()
-
-
-@router.get("/processed/{session_id}/summary", response_model=ProcessedPhotoSummary)
-async def get_processed_photos_summary(session_id: str):
-    """
-    Get a summary of processed photos for a session including statistics.
-    """
-    logger.info(f"Received request for processed photos summary: session_id={session_id}")
-    
-    session_manager = get_session_manager()
-    if not session_manager:
-        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
-    
-    paths = session_manager.get_session_paths(session_id)
-    if not paths or "metadata" not in paths:
-        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
-    
-    # Check database exists
-    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
-    if not db_path.exists():
-        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
-    
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        # Get basic counts
-        cursor.execute("SELECT type, COUNT(*) FROM memories GROUP BY type")
-        counts = {row[0]: row[1] for row in cursor.fetchall()}
-        total_photos = sum(counts.values())
-        user_photos = counts.get('user', 0)
-        public_photos = counts.get('public', 0)
-        
-        # Get unique locations
-        cursor.execute("""
-            SELECT DISTINCT location FROM memories 
-            WHERE location IS NOT NULL AND location != 'Unknown Location'
-        """)
-        locations = [row[0].split(',')[0].strip() for row in cursor.fetchall()]
-        locations = list(set(locations))  # Remove duplicates
-        
-        # Get date range
-        cursor.execute("SELECT MIN(date) as earliest, MAX(date) as latest FROM memories")
-        date_row = cursor.fetchone()
-        date_range = {
-            "earliest": date_row['earliest'],
-            "latest": date_row['latest']
-        }
-        
-        # Get average impact weight
-        cursor.execute("SELECT AVG(impact_weight) as avg_weight FROM memories")
-        avg_weight = cursor.fetchone()['avg_weight'] or 1.0
-        
-        # Get top keywords
-        cursor.execute("SELECT openai_keywords FROM memories")
-        all_keywords = []
-        for row in cursor.fetchall():
-            if row['openai_keywords']:
-                try:
-                    keywords = json.loads(row['openai_keywords'])
-                    all_keywords.extend(keywords)
-                except json.JSONDecodeError:
-                    continue
-        
-        # Count keyword frequency
-        keyword_counts = {}
-        for keyword in all_keywords:
-            keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
-        
-        # Get top 10 keywords
-        top_keywords = [
-            {"keyword": k, "count": v} 
-            for k, v in sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:10]
-        ]
-        
-        return ProcessedPhotoSummary(
-            session_id=session_id,
-            total_photos=total_photos,
-            user_photos=user_photos,
-            public_photos=public_photos,
-            locations_detected=locations,
-            date_range=date_range,
-            top_keywords=top_keywords,
-            average_impact_weight=round(avg_weight, 2)
-        )
-        
-    except sqlite3.Error as e:
-        logger.error(f"Database error getting summary for {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    except Exception as e:
-        logger.error(f"Error getting summary for {session_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-    finally:
-        if conn:
-            conn.close()
-
-
-@router.get("/processed/{session_id}/photo/{photo_id}", response_model=ProcessedPhotoDetail)
-async def get_single_processed_photo(session_id: str, photo_id: int, include_embeddings: bool = Query(True)):
-    """
-    Get details of a single processed photo by ID.
-    """
-    logger.info(f"Received request for single photo: session_id={session_id}, photo_id={photo_id}")
-    
-    session_manager = get_session_manager()
-    if not session_manager:
-        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
-    
-    paths = session_manager.get_session_paths(session_id)
-    if not paths or "metadata" not in paths:
-        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
-    
-    # Check database exists
-    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
-    if not db_path.exists():
-        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
-    
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        # Build query
-        query = """
-            SELECT id, filename, original_path, processed_path, title, location, date, type,
-                   openai_keywords, openai_description, impact_weight, detected_objects
-        """
-        if include_embeddings:
-            query += ", resnet_embedding"
-        
-        query += " FROM memories WHERE id = ?"
-        
-        cursor.execute(query, (photo_id,))
-        row = cursor.fetchone()
-        
-        if not row:
-            raise HTTPException(status_code=404, detail=f"Photo with ID {photo_id} not found.")
-        
-        # Parse JSON fields
-        keywords = json.loads(row['openai_keywords']) if row['openai_keywords'] else []
-        objects = json.loads(row['detected_objects']) if row['detected_objects'] else []
-        
-        # Handle embedding if requested
-        embedding = None
-        if include_embeddings and 'resnet_embedding' in row.keys() and row['resnet_embedding']:
-            try:
-                embedding = json.loads(row['resnet_embedding'])
-            except json.JSONDecodeError:
-                embedding = None
-        
-        # Construct image URL
-        img_url = None
-        base_static_path = f"/api/session/static/{session_id}"
-        if row['processed_path']:
-            # Extract type and filename from processed_path
-            path_parts = Path(row['processed_path']).parts
-            if len(path_parts) >= 2:
-                img_type = path_parts[-2]  # 'user' or 'public'
-                img_filename = path_parts[-1]
-                img_url = f"{base_static_path}/{img_type}/{img_filename}"
-        
-        return ProcessedPhotoDetail(
-            id=row['id'],
-            filename=row['filename'],
-            original_path=row['original_path'],
-            processed_path=row['processed_path'],
-            title=row['title'],
-            location=row['location'],
-            date=row['date'],
-            type=row['type'],
-            openai_keywords=keywords,
-            openai_description=row['openai_description'],
-            impact_weight=row['impact_weight'],
-            detected_objects=objects,
-            resnet_embedding=embedding,
-            image_url=img_url
-        )
-        
-    except sqlite3.Error as e:
-        logger.error(f"Database error getting photo {photo_id} for {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    except Exception as e:
-        logger.error(f"Error getting photo {photo_id} for {session_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-    finally:
-        if conn:
-            conn.close()
-
 @router.post("/fetch-public")
 async def fetch_public_photos(request: FetchPublicRequest):
     """
@@ -1834,6 +1520,321 @@ async def save_public_photos_to_session(session_id: str, paths: Dict[str, str], 
     finally:
         if conn:
             conn.close()
+
+@router.get("/processed/{session_id}", response_model=ProcessedPhotosResponse)
+async def get_processed_photos(
+    session_id: str,
+    photo_type: str = Query('all', description="Filter by type: 'all', 'user', or 'public'"),
+    limit: int = Query(50, ge=1, le=200, description="Maximum number of photos to return"),
+    offset: int = Query(0, ge=0, description="Number of photos to skip"),
+    include_embeddings: bool = Query(True, description="Include ResNet embeddings in response")
+):
+    """
+    Get details of all processed photos for a session.
+    """
+    logger.info(f"Received request for processed photos: session_id={session_id}, type={photo_type}, limit={limit}")
+    
+    session_manager = get_session_manager()
+    if not session_manager:
+        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
+    
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    
+    # Check database exists
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Build query based on photo_type filter
+        base_query = """
+            SELECT id, filename, original_path, processed_path, title, location, date, type,
+                   openai_keywords, openai_description, impact_weight, detected_objects
+        """
+        if include_embeddings:
+            base_query += ", resnet_embedding"
+        
+        base_query += " FROM memories"
+        
+        params = []
+        if photo_type != 'all':
+            base_query += " WHERE type = ?"
+            params.append(photo_type)
+        
+        # Add ordering and pagination
+        base_query += " ORDER BY impact_weight DESC, date DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
+        
+        cursor.execute(base_query, params)
+        rows = cursor.fetchall()
+        
+        # Get total counts
+        cursor.execute("SELECT type, COUNT(*) FROM memories GROUP BY type")
+        counts = {row[0]: row[1] for row in cursor.fetchall()}
+        total_count = sum(counts.values())
+        user_count = counts.get('user', 0)
+        public_count = counts.get('public', 0)
+        
+        # Process results
+        photos = []
+        base_static_path = f"/api/session/static/{session_id}"
+        
+        for row in rows:
+            # Parse JSON fields
+            keywords = json.loads(row['openai_keywords']) if row['openai_keywords'] else []
+            objects = json.loads(row['detected_objects']) if row['detected_objects'] else []
+            
+            # Handle embedding if requested
+            embedding = None
+            if include_embeddings and 'resnet_embedding' in row.keys() and row['resnet_embedding']:
+                try:
+                    embedding = json.loads(row['resnet_embedding'])
+                except json.JSONDecodeError:
+                    embedding = None
+            
+            # Construct image URL
+            img_url = None
+            if row['processed_path']:
+                # Extract type and filename from processed_path
+                path_parts = Path(row['processed_path']).parts
+                if len(path_parts) >= 2:
+                    img_type = path_parts[-2]  # 'user' or 'public'
+                    img_filename = path_parts[-1]
+                    img_url = f"{base_static_path}/{img_type}/{img_filename}"
+            
+            photo_detail = ProcessedPhotoDetail(
+                id=row['id'],
+                filename=row['filename'],
+                original_path=row['original_path'],
+                processed_path=row['processed_path'],
+                title=row['title'],
+                location=row['location'],
+                date=row['date'],
+                type=row['type'],
+                openai_keywords=keywords,
+                openai_description=row['openai_description'],
+                impact_weight=row['impact_weight'],
+                detected_objects=objects,
+                resnet_embedding=embedding,
+                image_url=img_url
+            )
+            photos.append(photo_detail)
+        
+        return ProcessedPhotosResponse(
+            session_id=session_id,
+            total_count=total_count,
+            user_count=user_count,
+            public_count=public_count,
+            photos=photos
+        )
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error getting processed photos for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error getting processed photos for {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+
+@router.get("/processed/{session_id}/summary", response_model=ProcessedPhotoSummary)
+async def get_processed_photos_summary(session_id: str):
+    """
+    Get a summary of processed photos for a session including statistics.
+    """
+    logger.info(f"Received request for processed photos summary: session_id={session_id}")
+    
+    session_manager = get_session_manager()
+    if not session_manager:
+        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
+    
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    
+    # Check database exists
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Get basic counts
+        cursor.execute("SELECT type, COUNT(*) FROM memories GROUP BY type")
+        counts = {row[0]: row[1] for row in cursor.fetchall()}
+        total_photos = sum(counts.values())
+        user_photos = counts.get('user', 0)
+        public_photos = counts.get('public', 0)
+        
+        # Get unique locations
+        cursor.execute("""
+            SELECT DISTINCT location FROM memories 
+            WHERE location IS NOT NULL AND location != 'Unknown Location'
+        """)
+        locations = [row[0].split(',')[0].strip() for row in cursor.fetchall()]
+        locations = list(set(locations))  # Remove duplicates
+        
+        # Get date range
+        cursor.execute("SELECT MIN(date) as earliest, MAX(date) as latest FROM memories")
+        date_row = cursor.fetchone()
+        date_range = {
+            "earliest": date_row['earliest'],
+            "latest": date_row['latest']
+        }
+        
+        # Get average impact weight
+        cursor.execute("SELECT AVG(impact_weight) as avg_weight FROM memories")
+        avg_weight = cursor.fetchone()['avg_weight'] or 1.0
+        
+        # Get top keywords
+        cursor.execute("SELECT openai_keywords FROM memories")
+        all_keywords = []
+        for row in cursor.fetchall():
+            if row['openai_keywords']:
+                try:
+                    keywords = json.loads(row['openai_keywords'])
+                    all_keywords.extend(keywords)
+                except json.JSONDecodeError:
+                    continue
+        
+        # Count keyword frequency
+        keyword_counts = {}
+        for keyword in all_keywords:
+            keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
+        
+        # Get top 10 keywords
+        top_keywords = [
+            {"keyword": k, "count": v} 
+            for k, v in sorted(keyword_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        ]
+        
+        return ProcessedPhotoSummary(
+            session_id=session_id,
+            total_photos=total_photos,
+            user_photos=user_photos,
+            public_photos=public_photos,
+            locations_detected=locations,
+            date_range=date_range,
+            top_keywords=top_keywords,
+            average_impact_weight=round(avg_weight, 2)
+        )
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error getting summary for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error getting summary for {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+
+@router.get("/processed/{session_id}/photo/{photo_id}", response_model=ProcessedPhotoDetail)
+async def get_single_processed_photo(session_id: str, photo_id: int, include_embeddings: bool = Query(True)):
+    """
+    Get details of a single processed photo by ID.
+    """
+    logger.info(f"Received request for single photo: session_id={session_id}, photo_id={photo_id}")
+    
+    session_manager = get_session_manager()
+    if not session_manager:
+        raise HTTPException(status_code=500, detail="Session Manager unavailable.")
+    
+    paths = session_manager.get_session_paths(session_id)
+    if not paths or "metadata" not in paths:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    
+    # Check database exists
+    db_path = Path(paths["metadata"]) / f"{session_id}_memories.db"
+    if not db_path.exists():
+        raise HTTPException(status_code=404, detail=f"No processed photos found for session '{session_id}'.")
+    
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Build query
+        query = """
+            SELECT id, filename, original_path, processed_path, title, location, date, type,
+                   openai_keywords, openai_description, impact_weight, detected_objects
+        """
+        if include_embeddings:
+            query += ", resnet_embedding"
+        
+        query += " FROM memories WHERE id = ?"
+        
+        cursor.execute(query, (photo_id,))
+        row = cursor.fetchone()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Photo with ID {photo_id} not found.")
+        
+        # Parse JSON fields
+        keywords = json.loads(row['openai_keywords']) if row['openai_keywords'] else []
+        objects = json.loads(row['detected_objects']) if row['detected_objects'] else []
+        
+        # Handle embedding if requested
+        embedding = None
+        if include_embeddings and 'resnet_embedding' in row.keys() and row['resnet_embedding']:
+            try:
+                embedding = json.loads(row['resnet_embedding'])
+            except json.JSONDecodeError:
+                embedding = None
+        
+        # Construct image URL
+        img_url = None
+        base_static_path = f"/api/session/static/{session_id}"
+        if row['processed_path']:
+            # Extract type and filename from processed_path
+            path_parts = Path(row['processed_path']).parts
+            if len(path_parts) >= 2:
+                img_type = path_parts[-2]  # 'user' or 'public'
+                img_filename = path_parts[-1]
+                img_url = f"{base_static_path}/{img_type}/{img_filename}"
+        
+        return ProcessedPhotoDetail(
+            id=row['id'],
+            filename=row['filename'],
+            original_path=row['original_path'],
+            processed_path=row['processed_path'],
+            title=row['title'],
+            location=row['location'],
+            date=row['date'],
+            type=row['type'],
+            openai_keywords=keywords,
+            openai_description=row['openai_description'],
+            impact_weight=row['impact_weight'],
+            detected_objects=objects,
+            resnet_embedding=embedding,
+            image_url=img_url
+        )
+        
+    except sqlite3.Error as e:
+        logger.error(f"Database error getting photo {photo_id} for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error getting photo {photo_id} for {session_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
 
 # --- Include router in main app ---
 # Example main.py:
